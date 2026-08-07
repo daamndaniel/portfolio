@@ -19,6 +19,57 @@
   a { color: inherit; text-decoration: none; }
   a:hover { color: inherit; opacity: .72; }
   @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
+
+  /* ===== responsive-fixes =====================================================
+     The design-tool export shipped ZERO @media queries: fluid clamp() typography
+     was the only responsive mechanism, so every fixed-column grid stayed fixed and
+     one auto-fit floor overflowed. All values below were measured in-browser.
+     Identical block on all five pages. ======================================== */
+
+  /* Hero portrait drifted up to 387px right of the text gutter once flex-wrap
+     stacked it (h1 at l=35, portrait at l=430 @845px). `margin-left:auto` already
+     computes to 0 while the hero is side-by-side, because the text column's
+     flex-grow:999 absorbs all free space -- verified 0 at 920px and 1425px. So
+     this is a no-op on desktop and needs no breakpoint. */
+  [style*="flex: 1 1 300px"][style*="margin-left: auto"] { margin-left: 0 !important; }
+
+  /* auto-fit floor of 340px exceeds the 311px available at 375px, so the track
+     rendered 340px inside a 311px box and clipped 29px. min() guards it and is
+     identical wherever >=340px fits. */
+  [style*="minmax(340px, 1fr)"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+  }
+
+  @media (max-width: 1023px) {
+    /* Case-study rail + content + aside. The centre (content!) column computes
+       42px at 375px, negative below 600px, and only 160px at 768px. Stack it. */
+    /* NOTE: the runtime sets styles via the CSSOM, which NORMALISES the serialised
+       style attribute -- the source bytes `minmax(0,200px)` are rendered as
+       `minmax(0px, 200px)`. An attribute selector must match the NORMALISED form.
+       Both are listed so this survives either behaviour. */
+    [style*="minmax(0px, 200px) 1fr minmax(0px, 280px)"],
+    [style*="minmax(0,200px) 1fr minmax(0,280px)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    /* Work-card metric tiles: 93px per tile at 375px. Reflow to 2-up. */
+    [style*="grid-template-columns: repeat(3, 1fr)"] {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)) !important;
+    }
+    /* The one genuine 2-col content pair (163px columns, overflowing). Targets
+       `gap: 1px` deliberately: the language/theme toggles are also `1fr 1fr` but
+       use `gap: 2px` and MUST stay side-by-side. */
+    [style*="grid-template-columns: 1fr 1fr; gap: 1px"] {
+      grid-template-columns: 1fr !important;
+    }
+    /* Case-study hero meta row is flex-wrap:nowrap, which crushed the status pill
+       until "In implementation" wrapped to 3 line-heights inside a 40px
+       single-line rounded pill. Exact-match selector so the friction rows
+       (same prefix + padding) keep their intentional nowrap. */
+    [style="display: flex; align-items: center; gap: 16px;"] { flex-wrap: wrap !important; }
+  }
 </style>
 </helmet>
 
