@@ -74,6 +74,38 @@
        (same prefix + padding) keep their intentional nowrap. */
     [style="display: flex; align-items: center; gap: 16px;"] { flex-wrap: wrap !important; }
   }
+
+  /* ----- second pass: gutter parity + a touch scroll-trap ----------------------
+     Two further defects, both verified directly; the other candidates from the
+     audit are deliberately NOT here because I could not reproduce them. ------- */
+
+  /* 34 list rows across all five pages carry `margin: 0 -16px` with a compensating
+     `padding: <v> 16px`, so their border-top divider and hover fill sit 16px
+     OUTSIDE the page gutter while every heading and paragraph sits on it. Measured
+     at a 360px viewport: row box spans 16 -> 344 while all text sits at x=32, so on
+     a phone the divider lands at half the text inset and reads as misaligned.
+     Zeroing the margin AND the matching horizontal padding is text-neutral by
+     construction (-16 + 16 = 0 either way) and lands the divider on the gutter.
+     Scoped to the phone tier only: above 640px the gutter grows via
+     clamp(32px, 5vw, 60px) and the same 16px overhang reads as a deliberate bleed. */
+  @media (max-width: 640px) {
+    [data-result-row], [data-principle], [data-next-item] {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+  }
+
+  /* Before/after comparison sliders set `touch-action: none` and call
+     setPointerCapture unconditionally on pointerdown, so on a touch screen a
+     vertical swipe that begins inside the widget drags the handle instead of
+     scrolling the page -- the reader gets stuck. `pan-y` returns vertical panning
+     to the browser while still delivering horizontal drags to the handler, and the
+     existing pointercancel handler already resets state when the browser claims the
+     gesture, so no JS change is needed. Applies at every width: a mouse drag is
+     unaffected by touch-action. */
+  [data-compare] { touch-action: pan-y !important; }
 </style>
 </helmet>
 
