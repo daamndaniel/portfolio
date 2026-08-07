@@ -102,6 +102,40 @@
      gesture, so no JS change is needed. Applies at every width: a mouse drag is
      unaffected by touch-action. */
   [data-compare] { touch-action: pan-y !important; }
+
+  /* ----- third pass: mobile header + hero alignment ---------------------------
+     All three reported by the user from a phone, all measured at 375x812. ---- */
+
+  @media (max-width: 640px) {
+    /* HEADER. The row cannot hold logo + 3 links + prefs pill + CTA: demand is
+       429px against 311px of content at 375px, and compacting every item (tighter
+       gap, smaller pills, 15px type) only reached 325px — still an overflow. So
+       one row for all five is impossible without sub-44px tap targets. Ordering
+       the prefs pill last instead lets the CTA join the links, which is what was
+       asked: "Let's talk" now sits at the same height as Home / Work / About.
+       Measured after: Home@32 Work@88 About@139 Let's-talk@196 on one row. */
+    nav { gap: 12px !important; }
+    nav > [data-prefs] { order: 9 !important; }
+
+    /* HERO STATS STRIP. The third item carries `margin-left: auto; text-align:
+       right` so the discipline tags sit flush right in the desktop row. Once the
+       strip wraps to stacked lines, that right alignment reads as an indent
+       against the two left-aligned lines above it. Both now start at x=32. */
+    [style*="flex: 1 1 220px"][style*="text-align: right"] {
+      margin-left: 0 !important;
+      text-align: left !important;
+    }
+
+    /* STACKED BUTTON PAIRS. The hero pair (View my work / Connect on LinkedIn)
+       and About's pair (Download PDF / email) share a left edge but have
+       different intrinsic widths, so their right edges are ragged once stacked.
+       Equal full width lines up both edges. This also contains About's email
+       button, which rendered 317px wide inside a 311px column. */
+    [style*="padding: 16px 28px"] {
+      width: 100% !important;
+      justify-content: center !important;
+    }
+  }
 </style>
 </helmet>
 
