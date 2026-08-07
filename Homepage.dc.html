@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&amp;family=Jost:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500&amp;family=Schibsted+Grotesk:wght@400;500;600&amp;family=Kalnia:wght@400;500&amp;family=Caveat:wght@500;600&amp;family=Nothing+You+Could+Do&amp;family=Reenie+Beanie&amp;family=DM+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #F2F1EC; font-family: 'Schibsted Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { color: inherit; opacity: .72; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes mq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @keyframes drift { from { background-position: 0 0; } to { background-position: 0 100vh; } }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+</style>
+</helmet>
+
+<div id="top" data-theme-root="" style="font-family: 'Schibsted Grotesk', system-ui, sans-serif; min-height: 100vh; background: var(--pg, #F2F1EC); color: var(--ink, #14130E);">
+  <div style="position: sticky; top: 0; z-index: 6; height: 3px; background: rgba(var(--inkrgb, 20,19,14),.08);"><div data-progress-bar="" style="height: 100%; width: 0%; background: var(--acc, #1B3BD8);"></div></div>
+
+  <div style="max-width: 1400px; margin: 0 auto;">
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(20px, 5vw, 28px) clamp(32px, 5vw, 60px);">
+        <a href="#top" style="display: inline-flex; align-items: baseline; padding: 8px 0; font-size: clamp(22px, 2.2vw, 28px); font-weight: 600; letter-spacing: -.055em; line-height: 1;">
+          <span>dapc</span><span style="color: var(--acc, #1B3BD8);">.</span>
+        </a>
+        <nav style="display: flex; flex-wrap: wrap; align-items: center; gap: clamp(18px, 2.4vw, 36px); font-size: 16px; color: rgba(var(--inkrgb, 20,19,14),.66);">
+          <a href="#top" style="padding: 12px 0; color: var(--ink, #14130E);">Home</a>
+          <a href="#work" style="padding: 12px 0; transition: color .18s ease;" style-hover="color: var(--acc, #1B3BD8); opacity: 1;">Work</a>
+          <a href="About.dc.html" style="padding: 12px 0; transition: color .18s ease;" style-hover="color: var(--acc, #1B3BD8); opacity: 1;">About</a>
+          
+          <div data-prefs="" style="position: relative;">
+            <button data-prefs-btn="" aria-label="Language and theme" aria-expanded="false" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.2); border-radius: 999px; background: transparent; color: inherit; font: 500 12px/1 'DM Mono', monospace; letter-spacing: .04em; cursor: pointer; transition: border-color .2s ease;">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path></svg><span data-prefs-lang="">EN</span>
+              <span style="width: 1px; height: 13px; background: rgba(var(--inkrgb, 20,19,14),.2);"></span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12v12z" fill="currentColor" stroke="none"></path></svg>
+            </button>
+            <div data-prefs-panel="" style="position: absolute; top: calc(100% + 12px); right: 0; width: 236px; padding: 20px; border-radius: 16px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); background: var(--pg, #F2F1EC); box-shadow: 0 22px 48px rgba(0,0,0,.18); opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .2s ease, transform .2s ease, visibility .2s; z-index: 20; display: flex; flex-direction: column; gap: 16px; text-align: left;">
+              <div>
+                <div style="font: 400 10px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66); margin-bottom: 8px;">Language</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 4px; border-radius: 999px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14);">
+                  <button data-lang-btn="en" style="padding: 12px 0; border: 0; border-radius: 999px; background: transparent; color: rgba(var(--inkrgb, 20,19,14),.66); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .03em; cursor: pointer;">English</button>
+                  <button data-lang-btn="es" style="padding: 12px 0; border: 0; border-radius: 999px; background: transparent; color: rgba(var(--inkrgb, 20,19,14),.66); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .03em; cursor: pointer;">Español</button>
+                </div>
+              </div>
+              <div>
+                <div style="font: 400 10px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66); margin-bottom: 8px;">Theme</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 4px; border-radius: 999px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14);">
+                  <button data-theme-btn="light" style="padding: 12px 0; border: 0; border-radius: 999px; background: transparent; color: rgba(var(--inkrgb, 20,19,14),.66); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .03em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>Light</button>
+                  <button data-theme-btn="dark" style="padding: 12px 0; border: 0; border-radius: 999px; background: transparent; color: rgba(var(--inkrgb, 20,19,14),.66); font: 500 12px/1 'DM Mono', monospace; letter-spacing: .03em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"></path></svg>Dark</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <a href="mailto:daniel.pazmino.c@gmail.com" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.2); color: var(--ink, #14130E); font-size: 16px; transition: background .2s ease, color .2s ease, border-color .2s ease;" style-hover="background: var(--ink, #14130E); color: var(--pg, #F2F1EC); border-color: var(--ink, #14130E); opacity: 1;">Let's talk <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></a>
+        </nav>
+      </div>
+
+      <div style="padding: clamp(40px, 5vw, 68px) clamp(32px, 5vw, 60px) 0;">
+        <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); display: flex; flex-wrap: wrap; gap: clamp(40px, 6vw, 80px); align-items: center;">
+          <div style="flex: 999 1 420px; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; font: 400 12px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>Quito, Ecuador</div>
+            <h1 style="margin: 0; font-size: clamp(38px, 5.4vw, 64px); font-weight: 500; line-height: 1.04; letter-spacing: -.034em; text-wrap: pretty; max-width: 860px;">I'm Daniel, a UX/UI designer who turns complex ideas into <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; letter-spacing: -0.01em; color: var(--acc, #1B3BD8);">clear, human experiences.</span></h1>
+            <p style="margin: 28px 0 0; max-width: 600px; font-size: clamp(17px, 1.9vw, 20px); line-height: 1.62; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">I'm happiest building them with good people. I bring curiosity, calm collaboration, and a constant drive to learn to every project.</p>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 36px;">
+              <a href="#work" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border: 1px solid var(--ink, #14130E); border-radius: 999px; background: var(--ink, #14130E); color: var(--pg, #F2F1EC); font-size: 16px; font-weight: 500; transition: background .2s ease, color .2s ease;" style-hover="background: var(--acc, #1B3BD8); border-color: var(--acc, #1B3BD8); color: #FFF; opacity: 1;">View my work <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></a>
+              <a href="#top" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.2); border-radius: 999px; font-size: 16px; font-weight: 500; transition: border-color .2s ease, color .2s ease;" style-hover="border-color: var(--ink, #14130E); opacity: 1;">Let's chat <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></a>
+            </div>
+          </div>
+          <div data-parallax="0.045" style="flex: 1 1 300px; max-width: 360px; margin-left: auto; will-change: transform; position: relative; padding: 0 12px 16px 0;">
+            <div aria-hidden="true" style="position: absolute; left: 22px; top: 20px; right: 0; bottom: 0; border: 1px solid var(--acc, #1B3BD8); border-radius: 18px;"></div>
+            <div style="position: relative; width: 100%; aspect-ratio: 4/5; border-radius: 18px; overflow: hidden; background: var(--ph, #E5E2D8); box-shadow: 0 18px 40px var(--shadow, rgba(20,19,14,.18)); transform: rotate(-2.2deg); transition: transform .55s cubic-bezier(.2,.7,.2,1);" style-hover="transform: rotate(0deg) scale(1.015);">
+              <img src="assets/daniel-portrait.jpg" alt="Daniel Pazmiño" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; transform: scale(1.25); transform-origin: 50% 26%;">
+              <span style="position: absolute; left: 16px; bottom: 16px; padding: 8px 16px 10px; border-radius: 999px; background: rgba(20,19,14,.55); color: #F2F1EC; font: 400 20px/1 'Caveat', cursive; letter-spacing: .01em; backdrop-filter: blur(6px);">hello there! :)</span>
+            </div>
+          </div>
+        </div>
+
+        <div data-reveal="" data-reveal-delay="120" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); display: flex; flex-wrap: wrap; gap: 20px 24px; margin-top: clamp(48px, 6vw, 80px); padding: 24px 0; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-bottom: 1px solid rgba(var(--inkrgb, 20,19,14),.14); font: 400 12px/1.5 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">
+          <div style="flex: 1 1 220px;"><span style="color: var(--ink, #14130E);">4+ years</span> designing digital products</div>
+          <div data-ticker="Currently 0→1 on an AI sports platform|Leading brand + design-system foundations|Exploring Claude for faster design cycles|Open to product design roles" style="flex: 1 1 240px; transition: opacity .35s ease;">Currently 0→1 on an AI sports platform</div>
+          <div style="flex: 1 1 220px; margin-left: auto; text-align: right;">UX Research · UX/UI · Design Systems</div>
+        </div>
+      </div>
+
+      <div style="padding: clamp(56px, 8vw, 96px) clamp(32px, 5vw, 60px) 0;">
+        <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px 40px;">
+          <h2 style="margin: 0; font-size: clamp(28px, 3.6vw, 40px); font-weight: 500; line-height: 1.08; letter-spacing: -.028em;">A few problems I've <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; color: var(--acc, #1B3BD8);">enjoyed solving.</span></h2>
+          <span style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66); white-space: nowrap;">Selected work · 03</span>
+        </div>
+      </div>
+
+      <div id="work" style="padding: clamp(24px, 5vw, 36px) clamp(32px, 5vw, 60px) 0; scroll-margin-top: 24px;">
+        <a href="Case Study - Sales Landing CRO.dc.html" data-case-card="" data-reveal="" style="display: flex; flex-wrap: wrap; gap: clamp(24px, 3vw, 40px); padding: 20px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 18px; opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease, opacity .9s cubic-bezier(.2,.7,.2,1);">
+          <div style="box-sizing: border-box; flex: 999 1 460px; min-width: 0; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: linear-gradient(155deg, rgba(var(--accrgb, 27,59,216),.18), rgba(var(--accrgb, 27,59,216),.05) 55%, rgba(var(--inkrgb, 20,19,14),.08)); display: flex; align-items: flex-end; justify-content: center; padding: 12px 28px 0;"><div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,0) 68%);"></div><div data-card-cover="" style="position: relative; width: 100%; margin-bottom: -18px; border-radius: 10px 10px 0 0; overflow: hidden; background: #FFFFFF; box-shadow: 0 22px 46px rgba(20,19,14,.32); transition: transform .5s cubic-bezier(.2,.7,.2,1);"><div style="display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 12px; background: #EFEDE7; border-bottom: 1px solid rgba(20,19,14,.08);"><div style="display: flex; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #FF5F57;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #FEBC2E;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #28C840;"></span></div><div style="flex: 1; max-width: 230px; height: 16px; border-radius: 999px; background: rgba(20,19,14,.07); display: flex; align-items: center; padding: 0 8px; font: 400 8px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(20,19,14,.5);">twilio.com/contact-sales</div></div><div style="aspect-ratio: 16/9; overflow: hidden;"><img src="assets/cro-card.png" alt="Redesigned contact sales landing page" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div></div>
+          <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; padding: 16px 16px 16px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;"><span style="font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">01</span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
+            <h3 style="margin: 16px 0 0; font-size: clamp(22px, 2.6vw, 28px); font-weight: 500; line-height: 1.18; letter-spacing: -.024em; text-wrap: pretty;">Turning high-intent traffic into completed sales conversations</h3>
+            <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">A CRO-focused redesign that made the path to sign-up clearer, easier, and more confidence-building.</p>
+            <div style="display: flex; gap: 8px; margin-top: 16px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);"><span>UX Research</span><span>·</span><span>UI Design</span><span>·</span><span>CRO</span></div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: auto; padding-top: 28px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);"><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+182%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Sign-up intent</div></div><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+9.53%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Form completion</div></div><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">–35%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Help clicks</div></div></div>
+          </div>
+        </a>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 20px; margin-top: 20px;">
+          <a href="Case Study - Stack Builders Website.dc.html" data-case-card="" data-reveal="" data-reveal-delay="90" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 18px; opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease, opacity .9s cubic-bezier(.2,.7,.2,1);">
+            <div style="box-sizing: border-box; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: linear-gradient(200deg, rgba(var(--accrgb, 27,59,216),.14), rgba(var(--inkrgb, 20,19,14),.08)); display: flex; align-items: flex-end; justify-content: center; padding: 12px 28px 0;"><div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,0) 68%);"></div><div data-card-cover="" style="position: relative; width: 100%; margin-bottom: -18px; border-radius: 10px 10px 0 0; overflow: hidden; background: #FFFFFF; box-shadow: 0 22px 46px rgba(20,19,14,.32); transition: transform .5s cubic-bezier(.2,.7,.2,1);"><div style="display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 12px; background: #EFEDE7; border-bottom: 1px solid rgba(20,19,14,.08);"><div style="display: flex; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #FF5F57;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #FEBC2E;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #28C840;"></span></div><div style="flex: 1; max-width: 230px; height: 16px; border-radius: 999px; background: rgba(20,19,14,.07); display: flex; align-items: center; padding: 0 8px; font: 400 8px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(20,19,14,.5);">stackbuilders.com</div></div><div style="aspect-ratio: 16/9; overflow: hidden;"><img src="assets/sb-card.png" alt="Redesigned Stack Builders homepage" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px;"><span style="display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">02<span style="padding: 4px 12px; border-radius: 999px; background: rgba(var(--accrgb, 27,59,216),.1); font: 400 10px/1 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--acc, #1B3BD8);">In implementation</span></span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
+            <h3 style="margin: 16px 0 0; font-size: clamp(20px, 2.4vw, 24px); font-weight: 500; line-height: 1.2; letter-spacing: -.022em; text-wrap: pretty;">Turning Stack Builders' website into a stronger first conversation</h3>
+            <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">An end-to-end redesign that clarifies the company's value and its path to engagement.</p>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: auto; padding-top: 24px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);"><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+73%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Traffic</div></div><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+200%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Conversion</div></div><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+28%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Engagement</div></div></div>
+          </a>
+          <a href="Case Study - Judged Sports Platform.dc.html" data-case-card="" data-reveal="" data-reveal-delay="180" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 18px; opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease, opacity .9s cubic-bezier(.2,.7,.2,1);">
+            <div style="box-sizing: border-box; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: linear-gradient(165deg, #101620, #1C2331); display: flex; align-items: flex-end; justify-content: center; padding: 12px 28px 0;"><div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,0) 68%);"></div><div data-card-cover="" style="position: relative; width: 100%; margin-bottom: -18px; border-radius: 10px 10px 0 0; overflow: hidden; background: #0F1319; box-shadow: 0 22px 46px rgba(20,19,14,.32); transition: transform .5s cubic-bezier(.2,.7,.2,1);"><div style="display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 12px; background: #1A2029; border-bottom: 1px solid rgba(255,255,255,.08);"><div style="display: flex; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #FF5F57;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #FEBC2E;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #28C840;"></span></div><div style="flex: 1; max-width: 230px; height: 16px; border-radius: 999px; background: rgba(255,255,255,.1); display: flex; align-items: center; padding: 0 8px; font: 400 8px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(255,255,255,.55);">xgrab.app</div></div><div style="aspect-ratio: 16/9; overflow: hidden;"><img src="assets/xg-card.png" alt="XGrab judged sports platform landing page" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px;"><span style="display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">03<span style="padding: 4px 12px; border-radius: 999px; background: rgba(var(--accrgb, 27,59,216),.1); font: 400 10px/1 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--acc, #1B3BD8);">In progress</span></span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
+            <h3 style="margin: 16px 0 0; font-size: clamp(20px, 2.4vw, 24px); font-weight: 500; line-height: 1.2; letter-spacing: -.022em; text-wrap: pretty;">Building the foundation for a new era of judged sports</h3>
+            <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">A 0-to-1 AI platform for moguls, aerials, and water ramps: brand, product, and design system.</p>
+            <div style="display: flex; gap: 24px; margin-top: auto; padding-top: 24px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);"><div><div style="font-size: 16px; font-weight: 500; letter-spacing: -.01em;">Early-stage platform</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Investor interest</div></div></div>
+          </a>
+        </div>
+      </div>
+
+      <div style="padding: clamp(64px, 8vw, 112px) clamp(32px, 5vw, 60px) 0;">
+        <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); background: var(--ink, #14130E); color: var(--pg, #F2F1EC); border-radius: 22px; padding: clamp(32px, 5vw, 64px) clamp(24px, 4.5vw, 56px);">
+          <div style="display: flex; flex-wrap: wrap; gap: clamp(28px, 4.5vw, 64px); align-items: start;">
+            <div style="flex: 1 1 300px; min-width: 0;">
+              <div style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: rgba(var(--pgrgb, 242,241,236),.5);">How I work</div>
+              <h2 style="margin: 20px 0 0; font-size: clamp(28px, 3.6vw, 40px); font-weight: 500; line-height: 1.07; letter-spacing: -.03em; text-wrap: pretty;">Serious about the work. <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; color: var(--accband, #9FB0FF);">Easy to work with.</span></h2>
+            </div>
+            <div style="flex: 999 1 380px; min-width: 0;">
+              <p style="margin: 0; font-size: clamp(16px, 1.7vw, 18px); line-height: 1.66; color: rgba(var(--pgrgb, 242,241,236),.78); text-wrap: pretty;">I care deeply about good design, but I don't believe great work comes from one person having all the answers. I ask questions early, share ideas openly, welcome feedback, and enjoy the messy middle of figuring things out together.</p>
+              <p style="margin: 20px 0 0; font-size: clamp(16px, 1.7vw, 18px); line-height: 1.66; color: rgba(var(--pgrgb, 242,241,236),.78); text-wrap: pretty;">Partnering with product, engineering, stakeholders, or fellow designers, I aim to bring clarity, good energy, and momentum to the room.</p>
+              <p style="margin: 32px 0 0; font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-size: 24px; line-height: 1.3; color: var(--pg, #F2F1EC);">Good work is serious. The process doesn't have to be.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: clamp(56px, 8vw, 96px) clamp(32px, 5vw, 60px) 0;">
+        <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px 40px; margin-bottom: 36px;">
+          <h2 style="margin: 0; font-size: clamp(28px, 3.6vw, 40px); font-weight: 500; line-height: 1.08; letter-spacing: -.028em;">A thoughtful teammate with a <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; color: var(--acc, #1B3BD8);">growth mindset.</span></h2>
+          <span style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66); white-space: nowrap;">Working with me</span>
+        </div>
+        <div>
+          <div data-principle="" data-reveal="" style="opacity: 0; transform: translateY(18px); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1), background-color .3s ease; display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; padding: 32px 16px; margin: 0 -16px; border-radius: 10px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);">
+            <span style="font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">01</span>
+            <h4 style="flex: 1 1 280px; max-width: 380px; margin: 0; font-size: clamp(20px, 2.2vw, 24px); font-weight: 500; line-height: 1.25; letter-spacing: -.02em;">I bring an opinion, not an ego.</h4>
+            <p style="flex: 999 1 340px; min-width: 0; margin: 0; font-size: clamp(16px, 1.7vw, 18px); line-height: 1.62; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">I care about craft and I'm comfortable advocating for a strong point of view. But the best solution rarely belongs to one person, so I listen closely, invite feedback, and let the strongest idea win.</p>
+          </div>
+          <div data-principle="" data-reveal="" data-reveal-delay="90" style="opacity: 0; transform: translateY(18px); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1), background-color .3s ease; display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; padding: 32px 16px; margin: 0 -16px; border-radius: 10px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);">
+            <span style="font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">02</span>
+            <h4 style="flex: 1 1 280px; max-width: 380px; margin: 0; font-size: clamp(20px, 2.2vw, 24px); font-weight: 500; line-height: 1.25; letter-spacing: -.02em;">I stay calm when things get messy.</h4>
+            <p style="flex: 999 1 340px; min-width: 0; margin: 0; font-size: clamp(16px, 1.7vw, 18px); line-height: 1.62; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">Ambiguity is part of the process. I enjoy breaking complex problems into clear next steps, helping teams move forward without losing sight of the people we're designing for.</p>
+          </div>
+          <div data-principle="" data-reveal="" data-reveal-delay="180" style="opacity: 0; transform: translateY(18px); transition: opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1), background-color .3s ease; display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; padding: 32px 16px; margin: 0 -16px; border-radius: 10px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-bottom: 1px solid rgba(var(--inkrgb, 20,19,14),.14);">
+            <span style="font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">03</span>
+            <h4 style="flex: 1 1 280px; max-width: 380px; margin: 0; font-size: clamp(20px, 2.2vw, 24px); font-weight: 500; line-height: 1.25; letter-spacing: -.02em;">I'm always learning.</h4>
+            <p style="flex: 999 1 340px; min-width: 0; margin: 0; font-size: clamp(16px, 1.7vw, 18px); line-height: 1.62; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">New tools, unfamiliar industries, feedback, and tough problems are all opportunities to grow. I'm naturally curious and excited by teammates who teach me something new.</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: clamp(64px, 8vw, 112px) clamp(32px, 5vw, 60px) 0;">
+        <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); text-align: center; padding-bottom: 20px;">
+          <div style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Let's talk</div>
+          <h2 style="margin: 24px auto 0; max-width: 880px; font-size: clamp(38px, 5.4vw, 64px); font-weight: 500; line-height: 1.03; letter-spacing: -.035em; text-wrap: pretty;">Let's make something <br><span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; color: var(--acc, #1B3BD8);">thoughtful.</span></h2>
+          <p style="margin: 24px auto 0; max-width: 560px; font-size: clamp(17px, 1.9vw, 20px); line-height: 1.6; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">Have a messy problem, a big idea, or a product that needs a little more clarity? I'd love to hear about it.</p>
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 36px;">
+            <a href="#top" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 32px; border: 1px solid var(--ink, #14130E); border-radius: 999px; background: var(--ink, #14130E); color: var(--pg, #F2F1EC); font-size: 16px; font-weight: 500; transition: background .2s ease, border-color .2s ease;" style-hover="background: var(--acc, #1B3BD8); border-color: var(--acc, #1B3BD8); opacity: 1;">Say hello</a>
+            <a href="#top" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 32px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.2); border-radius: 999px; font-size: 16px; font-weight: 500; transition: border-color .2s ease;" style-hover="border-color: var(--ink, #14130E); opacity: 1;">Connect on LinkedIn <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></a>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: clamp(20px, 5vw, 40px) clamp(32px, 5vw, 60px) clamp(24px, 5vw, 44px); margin-top: clamp(56px, 8vw, 80px); border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14); font: 400 12px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(var(--inkrgb, 20,19,14),.66);">
+        <span>© 2026 Daniel Pazmiño</span>
+        <span style="display: inline-flex; align-items: center; gap: 7px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>Quito, EC<span style="opacity: .45;">·</span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg><span data-clock="">·</span></span>
+      </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentType&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;caveat&quot;,&quot;scrawl&quot;,&quot;ballpoint&quot;,&quot;kalnia&quot;,&quot;sans&quot;],&quot;default&quot;:&quot;caveat&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;2a Index type&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;accentWarm&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#C05A2B&quot;,&quot;options&quot;:[&quot;#C05A2B&quot;,&quot;#A8412B&quot;,&quot;#8E6B3A&quot;,&quot;#4E6B57&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;1a Press palette&quot;},&quot;accentWarmAlt&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#D9A441&quot;,&quot;options&quot;:[&quot;#D9A441&quot;,&quot;#C9873C&quot;,&quot;#B7A16B&quot;,&quot;#6C8248&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;1a Press palette&quot;},&quot;phosphor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#F5A524&quot;,&quot;options&quot;:[&quot;#F5A524&quot;,&quot;#4ADE80&quot;,&quot;#E8E4DA&quot;,&quot;#FF7A45&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;1b Terminal palette&quot;},&quot;phosphorAlt&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#5BD1D7&quot;,&quot;options&quot;:[&quot;#5BD1D7&quot;,&quot;#9A8CFF&quot;,&quot;#F5A524&quot;,&quot;#8A8F98&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;1b Terminal palette&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    const root = document.documentElement.style;
+    const p = this.props || {};
+    root.setProperty('--acc-a', p.accentWarm || '#C05A2B');
+    root.setProperty('--acc-b', p.accentWarmAlt || '#D9A441');
+    root.setProperty('--acc-c', p.phosphor || '#F5A524');
+    root.setProperty('--acc-d', p.phosphorAlt || '#5BD1D7');
+    const faces = {
+      caveat: ["'Caveat', cursive", 'normal', 1.24, 0.78],
+      scrawl: ["'Nothing You Could Do', cursive", 'normal', 1.02, 1.1],
+      ballpoint: ["'Reenie Beanie', cursive", 'normal', 1.42, 0.72],
+      kalnia: ["'Kalnia', Georgia, serif", 'normal', 1, 1],
+      sans: ["'Schibsted Grotesk', system-ui, sans-serif", 'normal', 1, 1]
+    };
+    const face = faces[p.accentType] || faces.caveat;
+    root.setProperty('--accent-face', face[0]);
+    root.setProperty('--accent-style', face[1]);
+    root.setProperty('--accent-size', face[2] + 'em');
+    root.setProperty('--accent-lh', String(face[3]));
+
+    const calm = !!p.reduceMotion;
+    root.setProperty('--spin', calm ? '0s' : '70s');
+    root.setProperty('--mq', calm ? '0s' : '30s');
+    root.setProperty('--scan', calm ? '0s' : '9s');
+    root.setProperty('--bob', calm ? '0s' : '7s');
+
+    this.initExtras(calm);
+
+    const showAll = () => document.querySelectorAll('[data-reveal]').forEach(el => {
+      el.style.opacity = '1'; el.style.transform = 'none';
+    });
+    if (calm || !('IntersectionObserver' in window)) { showAll(); return; }
+
+    const seen = new WeakSet();
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'none';
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.06 });
+
+    const scan = () => document.querySelectorAll('[data-reveal]').forEach(el => {
+      if (seen.has(el)) return;
+      seen.add(el);
+      el.style.transitionDelay = (parseInt(el.getAttribute('data-reveal-delay') || '0', 10)) + 'ms';
+      io.observe(el);
+    });
+    scan();
+    this._t = setInterval(scan, 400);
+    this._stop = setTimeout(() => clearInterval(this._t), 12000);
+    this._fail = setTimeout(showAll, 14000);
+  }
+  componentDidUpdate() { this.componentDidMount(); }
+
+  initExtras(calm) {
+    if (this._extras) return;
+    this._extras = true;
+    this.initClock();
+    this.bindTheme();
+    if (calm) return;
+    const run = () => { this.bindCards(); this.initWorkIndex(); this.initParallax(); this.initCounters(); this.bindTheme(); this.bindPrefs(); this.bindMagnetic(); this.bindPrinciples(); this.bindTicker(); this.bindProgress(); };
+    setTimeout(run, 60);
+    this._bind = setInterval(run, 600);
+    setTimeout(() => clearInterval(this._bind), 12000);
+  }
+
+  dict() {
+    return {
+      "I'm Daniel, a UX/UI designer who turns complex ideas into": "Soy Daniel, diseñador UX/UI que convierte ideas complejas en",
+      "clear, human experiences.": "experiencias claras y humanas.",
+      "hello there! :)": "¡hola! :)",
+      "enjoyed solving.": "disfruté resolviendo.",
+      "An end-to-end redesign that clarifies the company's value and its path to engagement.": "Un rediseño integral que aclara el valor de la empresa y allana el camino al primer contacto.",
+      "A 0-to-1 AI platform for moguls, aerials, and water ramps: brand, product, and design system.": "Una plataforma de IA de 0 a 1 para moguls, saltos aéreos y rampas de agua: marca, producto y design system.",
+      "Home": "Inicio", "Work": "Trabajo", "About": "Sobre mí", "Résumé": "CV", "Let's talk": "Hablemos",
+      "Language": "Idioma", "Theme": "Tema", "Light": "Claro", "Dark": "Oscuro",
+      "Hey, I'm Daniel, a UX/UI designer who turns complex ideas into": "Hola, soy Daniel, diseñador UX/UI que convierte ideas complejas en",
+      "clear, human experiences": "experiencias claras y humanas",
+      "I'm happiest building them with good people. I bring curiosity, calm collaboration, and a constant drive to learn to every project.": "Y disfruto más cuando las construyo con buena gente. Aporto curiosidad, colaboración tranquila y ganas constantes de aprender en cada proyecto.",
+      "View my work": "Ver mi trabajo", "Let's chat": "Conversemos",
+      "4+ years": "4+ años", "designing digital products": "diseñando productos digitales",
+      "UX Research · UX/UI · Design Systems": "Investigación UX · UX/UI · Design Systems",
+      "Currently 0→1 on an AI sports platform": "Actualmente 0→1 en una plataforma deportiva con IA",
+      "Leading brand + design-system foundations": "Liderando la marca y las bases del design system",
+      "Exploring Claude for faster design cycles": "Explorando Claude para diseñar más rápido",
+      "Open to product design roles": "Abierto a roles de diseño de producto",
+      "A few problems I've": "Algunos problemas que", "enjoyed": "disfruté", "solving.": "resolviendo.",
+      "Selected work · 03": "Trabajo seleccionado · 03",
+      "Turning high-intent traffic into completed sales conversations": "Convertir visitas con alta intención en conversaciones de venta",
+      "A CRO-focused redesign that made the path to sign-up clearer, easier, and more confidence-building.": "Un rediseño enfocado en CRO que hizo el camino al registro más claro, simple y confiable.",
+      "UX Research": "Investigación UX", "UI Design": "Diseño UI", "UX Design": "Diseño UX",
+      "Website Strategy": "Estrategia web", "Brand Identity": "Identidad de marca",
+      "Sign-up intent": "Intención de registro", "Form completion": "Formularios completados", "Help clicks": "Clics en ayuda",
+      "Turning Stack Builders' website into a stronger first conversation": "Convertir el sitio de Stack Builders en una mejor primera conversación",
+      "An end-to-end redesign that clarified the company's value and turned more visits into meaningful engagement.": "Un rediseño integral que aclaró el valor de la empresa y convirtió más visitas en interacciones reales.",
+      "Engagement": "Interacción", "Conversion": "Conversión", "In implementation": "En implementación",
+      "An end-to-end redesign that clarifies the company's value and its path to engagement. Targets set, now in build.": "Un rediseño integral que aclara el valor de la empresa y allana el camino al primer contacto. Metas definidas, ahora en construcción.",
+      "Traffic": "Tráfico", "Conversion rate": "Tasa de conversión", "In progress": "En progreso",
+      "Building the foundation for a new era of judged sports": "Construyendo la base para una nueva era de los deportes de puntuación",
+      "A 0-to-1 AI platform for moguls, aerials, and water ramps: leading brand, product experience, and the design-system foundation.": "Una plataforma de IA de 0 a 1 para moguls, saltos aéreos y rampas de agua: lidero la marca, la experiencia de producto y las bases del design system.",
+      "Early-stage platform": "Plataforma en etapa temprana", "Investor interest": "Interés de inversionistas",
+      "How I work": "Cómo trabajo", "Serious about the work.": "Riguroso con el trabajo.", "Easy to work with.": "Fácil en el trato.",
+      "I care deeply about good design, but I don't believe great work comes from one person having all the answers. I ask questions early, share ideas openly, welcome feedback, and enjoy the messy middle of figuring things out together.": "Me importa el buen diseño, pero no creo que el gran trabajo salga de una sola persona con todas las respuestas. Pregunto desde el inicio, comparto ideas abiertamente, recibo bien el feedback y disfruto el desorden del proceso cuando lo resolvemos juntos.",
+      "Partnering with product, engineering, stakeholders, or fellow designers, I aim to bring clarity, good energy, and momentum to the room.": "Trabajando con producto, ingeniería, stakeholders u otros diseñadores, busco aportar claridad, buena energía e impulso.",
+      "Good work is serious. The process doesn't have to be.": "El buen trabajo es serio. El proceso no tiene por qué serlo.",
+      "A thoughtful teammate with a": "Un compañero de equipo reflexivo con", "growth mindset": "mentalidad de crecimiento",
+      "Working with me": "Trabajar conmigo",
+      "I bring an opinion, not an ego.": "Aporto criterio, no ego.",
+      "I care about craft and I'm comfortable advocating for a strong point of view. But the best solution rarely belongs to one person, so I listen closely, invite feedback, and let the strongest idea win.": "Me importa el oficio y defiendo un punto de vista claro. Pero la mejor solución rara vez es de una sola persona: escucho, invito al feedback y dejo que gane la mejor idea.",
+      "I stay calm when things get messy.": "Mantengo la calma cuando todo se enreda.",
+      "Ambiguity is part of the process. I enjoy breaking complex problems into clear next steps, helping teams move forward without losing sight of the people we're designing for.": "La ambigüedad es parte del proceso. Disfruto dividir problemas complejos en pasos claros, ayudando al equipo a avanzar sin perder de vista a las personas para las que diseñamos.",
+      "I'm always learning.": "Siempre estoy aprendiendo.",
+      "New tools, unfamiliar industries, feedback, and tough problems are all opportunities to grow. I'm naturally curious and excited by teammates who teach me something new.": "Nuevas herramientas, industrias desconocidas, feedback y problemas difíciles son oportunidades para crecer. Soy curioso por naturaleza y me entusiasman los compañeros que me enseñan algo nuevo.",
+      "Let's make something": "Hagamos algo", "thoughtful": "con intención",
+      "Have a messy problem, a big idea, or a product that needs a little more clarity? I'd love to hear about it.": "¿Tienes un problema enredado, una idea grande o un producto que necesita más claridad? Me encantaría escucharlo.",
+      "Say hello": "Escríbeme", "Connect on LinkedIn": "Conectemos en LinkedIn"
+    };
+  }
+
+  applyLang(root, lang) {
+    const dict = this._dict || (this._dict = this.dict());
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = w.nextNode())) {
+      if (n.__en === undefined) n.__en = n.nodeValue;
+      const key = n.__en.trim();
+      if (!key || key.length < 2) { n.nodeValue = n.__en; continue; }
+      let hit = dict[key];
+      if (!hit) {
+        const m = key.match(/^(.*?)([.,;:!?]+)$/);
+        if (m && dict[m[1]]) hit = dict[m[1]] + m[2];
+      }
+      n.nodeValue = (lang === 'es' && hit) ? n.__en.replace(key, hit) : n.__en;
+    }
+    root.querySelectorAll('[data-ticker]').forEach(el => {
+      const src = el.__ticker || (el.__ticker = (el.getAttribute('data-ticker') || '').split('|'));
+      el.__items = src.map(t => (lang === 'es' && dict[t.trim()]) ? dict[t.trim()] : t);
+      el.textContent = el.__items[el.__i || 0];
+    });
+    root.querySelectorAll('[data-prefs-lang]').forEach(el => { el.textContent = lang.toUpperCase(); });
+    root.querySelectorAll('[data-lang-btn]').forEach(b => {
+      const on = b.getAttribute('data-lang-btn') === lang;
+      b.style.background = on ? 'var(--ink, #14130E)' : 'transparent';
+      b.style.color = on ? 'var(--pg, #F2F1EC)' : 'rgba(var(--inkrgb, 20,19,14),.66)';
+    });
+    try { localStorage.setItem('dp-portfolio-lang', lang); } catch (e) {}
+  }
+
+  bindPrefs() {
+    document.querySelectorAll('[data-theme-root]').forEach(root => {
+      if (!this.once(root, 'prefs')) return;
+      let lang = 'en';
+      try { lang = localStorage.getItem('dp-portfolio-lang') || 'en'; } catch (e) {}
+      this.applyLang(root, lang);
+      root.querySelectorAll('[data-lang-btn]').forEach(b => {
+        b.addEventListener('click', ev => { ev.stopPropagation(); this.applyLang(root, b.getAttribute('data-lang-btn')); });
+      });
+      const wrap = root.querySelector('[data-prefs]');
+      if (!wrap) return;
+      const btn = wrap.querySelector('[data-prefs-btn]');
+      const panel = wrap.querySelector('[data-prefs-panel]');
+      const set = open => {
+        panel.style.opacity = open ? '1' : '0';
+        panel.style.visibility = open ? 'visible' : 'hidden';
+        panel.style.transform = open ? 'translateY(0)' : 'translateY(-6px)';
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.style.borderColor = open ? 'rgba(var(--inkrgb, 20,19,14),.5)' : 'rgba(var(--inkrgb, 20,19,14),.2)';
+        wrap.__open = open;
+      };
+      set(false);
+      btn.addEventListener('click', ev => { ev.stopPropagation(); set(!wrap.__open); });
+      panel.addEventListener('click', ev => ev.stopPropagation());
+      document.addEventListener('click', () => { if (wrap.__open) set(false); });
+      document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && wrap.__open) set(false); });
+    });
+  }
+
+  once(el, key) {
+    if (!el || el['__' + key]) return false;
+    el['__' + key] = true;
+    return true;
+  }
+
+  themeVars(mode) {
+    return mode === 'dark'
+      ? { '--pg': '#14130E', '--ink': '#F2F1EC', '--inkrgb': '242,241,236', '--pgrgb': '20,19,14', '--acc': '#7E97FF', '--accrgb': '126,151,255', '--accband': '#1B3BD8', '--ph': '#1C1B17', '--chip': 'rgba(255,255,255,.045)', '--shadow': 'rgba(0,0,0,.55)' }
+      : { '--pg': '#F2F1EC', '--ink': '#14130E', '--inkrgb': '20,19,14', '--pgrgb': '242,241,236', '--acc': '#1B3BD8', '--accrgb': '27,59,216', '--accband': '#9FB0FF', '--ph': '#E5E2D8', '--chip': 'rgba(255,255,255,.6)', '--shadow': 'rgba(20,19,14,.22)' };
+  }
+
+  applyTheme(root, mode) {
+    const vars = this.themeVars(mode);
+    Object.keys(vars).forEach(k => root.style.setProperty(k, vars[k]));
+    document.body.style.background = vars['--pg'];
+    root.querySelectorAll('[data-theme-btn]').forEach(b => {
+      const on = b.getAttribute('data-theme-btn') === mode;
+      b.style.background = on ? 'var(--ink, #14130E)' : 'transparent';
+      b.style.color = on ? 'var(--pg, #F2F1EC)' : 'rgba(var(--inkrgb, 20,19,14),.66)';
+    });
+    try { localStorage.setItem('dp-portfolio-theme', mode); } catch (e) {}
+  }
+
+  bindTheme() {
+    document.querySelectorAll('[data-theme-root]').forEach(root => {
+      if (!this.once(root, 'theme')) return;
+      let mode = 'light';
+      try { mode = localStorage.getItem('dp-portfolio-theme') || 'light'; } catch (e) {}
+      this.applyTheme(root, mode);
+      root.querySelectorAll('[data-theme-btn]').forEach(b => {
+        b.addEventListener('click', () => this.applyTheme(root, b.getAttribute('data-theme-btn')));
+      });
+    });
+  }
+
+  bindPrinciples() {
+    const rows = Array.prototype.slice.call(document.querySelectorAll('[data-principle]')).filter(r => this.once(r, 'pri'));
+    if (!rows.length || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const num = e.target.firstElementChild;
+        if (num) { num.style.transition = 'color .7s cubic-bezier(.2,.7,.2,1)'; num.style.color = 'var(--acc, #1B3BD8)'; }
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.6, rootMargin: '0px 0px -8% 0px' });
+    rows.forEach(r => io.observe(r));
+  }
+
+  bindMagnetic() {
+    document.querySelectorAll('[data-magnetic]').forEach(el => {
+      if (!this.once(el, 'mag')) return;
+      el.style.transition = (el.style.transition ? el.style.transition + ', ' : '') + 'transform .25s cubic-bezier(.2,.7,.2,1)';
+      el.addEventListener('mousemove', e => {
+        const r = el.getBoundingClientRect();
+        const sc = r.width / el.offsetWidth || 1;
+        const dx = ((e.clientX - r.left) / sc - el.offsetWidth / 2) * 0.16;
+        const dy = ((e.clientY - r.top) / sc - el.offsetHeight / 2) * 0.28;
+        el.style.transition = 'transform .08s linear';
+        el.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transition = 'transform .35s cubic-bezier(.2,1.4,.5,1)';
+        el.style.transform = 'translate(0,0)';
+      });
+    });
+  }
+
+  bindTicker() {
+    document.querySelectorAll('[data-ticker]').forEach(el => {
+      if (!this.once(el, 'tick')) return;
+      const items = (el.getAttribute('data-ticker') || '').split('|').filter(Boolean);
+      if (items.length < 2) return;
+      el.__items = el.__items || items;
+      el.__i = 0;
+      el.__int = setInterval(() => {
+        el.style.opacity = '0';
+        setTimeout(() => {
+          const list = el.__items || items;
+          el.__i = (el.__i + 1) % list.length;
+          el.textContent = list[el.__i];
+          el.style.opacity = '1';
+        }, 350);
+      }, 3600);
+    });
+  }
+
+  bindProgress() {
+    const bars = document.querySelectorAll('[data-progress-bar]');
+    if (!bars.length) return;
+    this._bars = bars;
+    if (!this.once(window, 'prog')) return;
+    const upd = () => {
+      (this._bars || []).forEach(bar => {
+        const card = bar.closest('[data-theme-root]');
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        const span = Math.max(1, r.height - window.innerHeight);
+        bar.style.width = (Math.min(1, Math.max(0, -r.top / span)) * 100).toFixed(2) + '%';
+      });
+    };
+    window.addEventListener('scroll', upd, { passive: true });
+    upd();
+  }
+
+  initClock() {
+    if (!this.once(window, 'clock')) { return; }
+    const tick = () => {
+      let t;
+      try {
+        t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Guayaquil' });
+      } catch (e) { t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
+      document.querySelectorAll('[data-clock]').forEach(el => { el.textContent = t.toLowerCase(); });
+    };
+    tick();
+    this._clock = setInterval(tick, 20000);
+  }
+
+  bindCards() {
+    document.querySelectorAll('[data-case-card]').forEach(card => {
+      if (!this.once(card, 'cc')) return;
+      const covers = Array.prototype.slice.call(card.querySelectorAll('[data-card-cover]'));
+      const arrow = card.querySelector('[data-card-arrow]');
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-6px)';
+        card.style.borderColor = 'rgba(var(--accrgb, 27,59,216),.45)';
+        card.style.boxShadow = '0 26px 60px var(--shadow, rgba(20,19,14,.18))';
+        covers.forEach(c => { c.style.transform = c.getAttribute('data-hover-t') || 'translateY(-10px)'; });
+        if (arrow) { arrow.style.transform = 'translate(4px,-4px)'; arrow.style.color = 'var(--acc, #1B3BD8)'; }
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'none';
+        card.style.borderColor = 'rgba(var(--inkrgb, 20,19,14),.14)';
+        card.style.boxShadow = 'none';
+        covers.forEach(c => { c.style.transform = c.getAttribute('data-rest-t') || 'none'; });
+        if (arrow) { arrow.style.transform = 'none'; arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.35)'; }
+      });
+    });
+  }
+
+  initWorkIndex() {
+    document.querySelectorAll('[data-work-index]').forEach(w => this.bindWorkIndex(w));
+  }
+
+  bindWorkIndex(wrap) {
+    const prev = wrap && wrap.querySelector('[data-work-preview]');
+    if (!wrap || !prev || !this.once(wrap, 'wi')) return;
+    const dim = wrap.hasAttribute('data-dim-siblings');
+    const allRows = Array.prototype.slice.call(wrap.querySelectorAll('[data-work-row]'));
+    const label = prev.querySelector('[data-preview-label]');
+    const state = { x: 0, y: 0, tx: 0, ty: 0, on: false, raf: 0 };
+
+    const frame = () => {
+      state.x += (state.tx - state.x) * 0.16;
+      state.y += (state.ty - state.y) * 0.16;
+      prev.style.transform = 'translate3d(' + Math.round(state.x) + 'px,' + Math.round(state.y) + 'px,0) scale(' + (state.on ? 1 : 0.94) + ')';
+      state.raf = (state.on || Math.abs(state.tx - state.x) > 0.5) ? requestAnimationFrame(frame) : 0;
+    };
+    const kick = () => { if (!state.raf) state.raf = requestAnimationFrame(frame); };
+
+    wrap.addEventListener('mousemove', e => {
+      const r = wrap.getBoundingClientRect();
+      const s = r.width / wrap.offsetWidth || 1;
+      state.tx = (e.clientX - r.left) / s - prev.offsetWidth / 2;
+      state.ty = (e.clientY - r.top) / s - prev.offsetHeight / 2;
+      if (!state.on) { state.x = state.tx; state.y = state.ty; }
+      kick();
+    });
+
+    wrap.querySelectorAll('[data-work-row]').forEach(row => {
+      const title = row.querySelector('[data-row-title]');
+      const arrow = row.querySelector('[data-row-arrow]');
+      const tint = row.getAttribute('data-hover') || 'rgba(27,59,216,.045)';
+      if (row.hasAttribute('data-hover-rule')) row.style.transition = row.style.transition + ', box-shadow .3s ease';
+      const fg = row.getAttribute('data-hover-fg') || '#1B3BD8';
+      row.addEventListener('mouseenter', () => {
+        state.on = true;
+        prev.style.opacity = '1';
+        if (label) label.innerHTML = (row.getAttribute('data-preview') || '').replace(/\n/g, '<br>');
+        row.style.backgroundColor = tint;
+        if (title) { title.style.transform = 'translateX(8px)'; title.style.color = fg; }
+        if (row.hasAttribute('data-hover-rule')) {
+          row.style.boxShadow = 'none';
+          const num = row.querySelector('span');
+          if (num) { num.style.transition = 'color .3s ease'; num.style.color = 'var(--acc, #1B3BD8)'; }
+        }
+        if (arrow) { arrow.style.transform = 'translate(4px,-4px)'; arrow.style.color = fg; }
+        if (dim) allRows.forEach(r => { r.style.transition = r.style.transition + ', opacity .3s ease'; r.style.opacity = r === row ? '1' : '.42'; });
+        kick();
+      });
+      row.addEventListener('mouseleave', () => {
+        if (dim) allRows.forEach(r => { r.style.opacity = '1'; });
+        state.on = false;
+        prev.style.opacity = '0';
+        row.style.backgroundColor = 'transparent';
+        if (title) { title.style.transform = 'none'; title.style.color = ''; title.style.textDecoration = 'none'; }
+        if (row.hasAttribute('data-hover-rule')) {
+          row.style.boxShadow = 'none';
+          const num = row.querySelector('span');
+          if (num) num.style.color = '';
+        }
+        if (arrow) { arrow.style.transform = 'none'; arrow.style.color = ''; }
+        kick();
+      });
+    });
+  }
+
+  initParallax() {
+    this._plx = Array.prototype.slice.call(document.querySelectorAll('[data-parallax]'));
+    if (!this._plx.length || !this.once(window, 'plx')) return;
+    let ticking = false;
+    const apply = () => {
+      ticking = false;
+      const mid = window.innerHeight / 2;
+      (this._plx || []).forEach(el => {
+        const r = el.getBoundingClientRect();
+        const rate = parseFloat(el.getAttribute('data-parallax')) || 0.04;
+        el.style.transform = 'translateY(' + ((mid - (r.top + r.height / 2)) * rate).toFixed(1) + 'px)';
+      });
+    };
+    this._onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(apply); } };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    apply();
+  }
+
+  initCounters() {
+    const els = document.querySelectorAll('[data-count]');
+    if (!els.length || !('IntersectionObserver' in window)) return;
+    const io = this._countIO || (this._countIO = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        io.unobserve(el);
+        const raw = el.getAttribute('data-count') || el.textContent;
+        const m = raw.match(/-?[\d.]+/);
+        if (!m) return;
+        const target = parseFloat(m[0]);
+        const dec = (m[0].split('.')[1] || '').length;
+        const pre = raw.slice(0, m.index);
+        const post = raw.slice(m.index + m[0].length);
+        const t0 = performance.now();
+        const step = now => {
+          const p = Math.min(1, (now - t0) / 1100);
+          const eased = 1 - Math.pow(1 - p, 3);
+          el.textContent = pre + (target * eased).toFixed(dec) + post;
+          if (p < 1) requestAnimationFrame(step);
+        };
+        el.textContent = pre + (0).toFixed(dec) + post;
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.6 }));
+    els.forEach(el => { if (this.once(el, 'cnt')) io.observe(el); });
+  }
+  componentWillUnmount() {
+    clearInterval(this._t); clearTimeout(this._stop); clearTimeout(this._fail); clearInterval(this._clock);
+    if (this._onScroll) window.removeEventListener('scroll', this._onScroll);
+  }
+}
+
+</script>
+</body>
+</html>
