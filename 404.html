@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page not found — Daniel Pazmiño</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<script>
+/* Rescue known-good URL shapes, then stop. Absolute paths only: this file is served
+   at arbitrary depths, so relative refs would resolve against the wrong base.
+   BASE is DERIVED, not hardcoded, so a custom domain or repo rename cannot silently
+   disable every rescue below. */
+(function () {
+  // Derive the site base by matching the repo segment, NOT by sniffing the hostname:
+  // works at /portfolio/... (project site or local test) and at / (custom-domain apex).
+  var REPO = 'portfolio';
+  var seg = location.pathname.split('/').filter(Boolean);
+  var BASE = seg[0] === REPO ? '/' + REPO + '/' : '/';
+  var rest = location.pathname.slice(BASE.length);
+  var SLUGS = ['about', 'sales-landing-cro', 'stack-builders-website', 'judged-sports-platform'];
+  var LEGACY = {
+    'Homepage.dc.html': '',
+    'About.dc.html': 'about',
+    'Case Study - Sales Landing CRO.dc.html': 'sales-landing-cro',
+    'Case Study - Stack Builders Website.dc.html': 'stack-builders-website',
+    'Case Study - Judged Sports Platform.dc.html': 'judged-sports-platform'
+  };
+  function go(p) { location.replace(BASE + p + location.search + location.hash); }
+
+  var key = '';
+  try { key = decodeURIComponent(rest); } catch (e) { key = rest; }
+  key = key.replace(/\/+$/, '');           // tolerate a trailing slash on legacy paths
+  if (!/\.dc\.html$/.test(key)) key = key.replace(/\.dc$/, '.dc.html');  // /About.dc -> /About.dc.html
+
+  if (Object.prototype.hasOwnProperty.call(LEGACY, key)) { go(LEGACY[key]); return; }
+
+  var noSlash = rest.replace(/\/+$/, '');
+  if (noSlash === 'index') { go(''); return; }
+  if (SLUGS.indexOf(noSlash) !== -1) {
+    // Trailing slash (/about/) -> /about. Bare slug reaching here means GitHub's
+    // implicit .html append stopped working; fall back to the explicit file so the
+    // site degrades to ugly-but-working rather than broken. Terminates: about.html exists.
+    go(noSlash !== rest ? noSlash : noSlash + '.html'); return;
+  }
+})();
+</script>
+</head>
+<body style="margin:0;font:400 15px/1.5 system-ui,sans-serif;background:#F2F1EC;color:#14130E;display:grid;place-items:center;height:100vh;text-align:center">
+<p>Page not found — <a id="home" href="../" style="color:#1B3BD8">back to the portfolio</a>
+<noscript><br><small>JavaScript is disabled, so you were not redirected automatically.</small></noscript></p>
+<script>
+/* Point the escape link at the same derived base, so it cannot 404 like a hardcoded one would. */
+(function () {
+  var REPO = 'portfolio';
+  var seg = location.pathname.split('/').filter(Boolean);
+  document.getElementById('home').setAttribute('href', seg[0] === REPO ? '/' + REPO + '/' : '/');
+})();
+</script>
+</body>
+</html>
