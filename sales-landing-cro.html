@@ -21,6 +21,11 @@
   @keyframes grip { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
 
 
+
+
+
+
+
   /* ===========================================================================
      RESPONSIVE FIXES — hand-added on top of a design-tool export
      ---------------------------------------------------------------------------
@@ -76,6 +81,12 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
   }
 
+  /* mobile-menu.js appends the hamburger toggle to the header on every page. It is
+     only meaningful in the phone tier, where the sticky bar collapses the nav, so
+     hide it everywhere else. Declared here (outside any media query) so desktop is
+     covered even though the button exists in the DOM at all widths. */
+  [data-menu-toggle] { display: none; }
+
   /* The before/after comparison sliders set `touch-action: none` and call
      setPointerCapture unconditionally on pointerdown, so on any touch screen a
      vertical swipe starting inside the widget dragged the handle instead of
@@ -105,32 +116,130 @@
 
   @media (max-width: 640px) {
 
-    /* HEADER, two rows: [logo ............ EN pill] / [Home Work About Let's talk].
-       One row for all five is impossible at 375px — demand is 429px against 311px
-       of content, and compacting everything (12px gap, smaller pills, 15px type)
-       only reached 325px while breaking 44px tap targets.
+    /* STICKY BAR + HAMBURGER.  Bar: [logo ......... Let's talk ☰]
+                               Panel: Home / Work / About / EN+theme pill
+
+       WHY. The case studies run 4,000-17,000px tall, so reaching the nav meant
+       scrolling all the way back up. A sticky header fixes that — but the previous
+       two-row header was ~140px, i.e. 17% of an 812px phone, too much to freeze
+       on screen. Collapsing the three page links and the prefs pill behind a
+       toggle brings the bar to one row, which is what makes sticky affordable.
+       The two changes are therefore coupled, not independent.
+
+       The "Let's talk" CTA deliberately stays IN the bar rather than in the panel.
+       It is the one conversion action on the site, and it fits: logo 53 + CTA 128
+       + toggle 44 + gaps = 249px of the 311px available at 375px. Only secondary
+       navigation is hidden, which is the part a hamburger should hide.
+
+       Desktop keeps the full visible nav — hiding three links behind a tap
+       measurably reduces engagement, and above 640px there is room for them. So
+       none of this applies above the phone tier.
+
        `display: contents` drops the <nav> box so its children become direct flex
-       items of the header; the prefs pill then sits beside the logo (order 0) and
-       the links + CTA share the next row (order 1). The ::after is a zero-height
-       full-width flex item that forces the break between the two order groups —
-       no magic offsets, so it holds at any gutter width.
-       Measured: logo@32 / EN right-inset 32, vertical centres 0px apart;
-       row 2 Home@32 Work@94 About@151 Let's-talk@215. At 320px it degrades to
-       [Home Work About] / [EN Let's talk] with no overflow.
-       The two ::after selectors cover the two header variants: index.html uses
-       clamp() padding, the other four use `padding: 24px 0`.
+       items of the header, which is what lets CSS `order` split them into a bar
+       group and a panel group without moving a single node in the DOM. Avoiding
+       DOM surgery matters here: the tree is React-rendered, and reparenting nodes
+       risks them being reconciled back. (A JS-*appended* node is safe — verified
+       it survives both a prefs-dropdown open and a language switch.)
        VERIFIED the <nav> landmark survives display:contents in the accessibility
        tree; the old Chrome/Safari semantics bug is fixed in Chrome 89+/Safari 15.4+. */
-    nav { display: contents !important; }
-    nav > [data-prefs] { order: 0 !important; }
-    nav > a { order: 1 !important; }
-    [style*="justify-content: space-between"][style*="padding: clamp(20px, 5vw, 28px)"]::after,
-    [style*="justify-content: space-between"][style*="padding: 24px 0"]::after {
-      content: '' !important;
-      flex-basis: 100% !important;
-      height: 0 !important;
-      order: 0 !important;
+
+    /* The header pins just under the 3px scroll-progress bar (top:0, z 6 on index
+       / 30 elsewhere). z 25 keeps it above the chapter rail (z 20).
+
+       WHY fixed AND NOT sticky. `position: sticky` was tried first and only sticks
+       within its own parent's box — measured 1452px here, so the header released
+       right after the hero and scrolled away, which is the exact problem this is
+       meant to solve on 4,000-17,000px case studies. The header's parent is a
+       max-width wrapper, not a page-height one, and making a higher ancestor
+       sticky would pin the hero too. fixed is the only option that survives the
+       whole page; mobile-menu.js pays for the lost flow space by setting
+       padding-top on that parent (and re-applies it on every ResizeObserver tick,
+       so it self-heals if React ever resets the inline style). */
+    [style*="justify-content: space-between"][style*="padding: clamp(20px, 5vw, 28px)"],
+    [style*="justify-content: space-between"][style*="padding: 24px 0"] {
+      position: fixed !important;
+      top: 3px !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 25 !important;
+      background: var(--pg, #F2F1EC) !important;
     }
+
+    /* Replace the flow space the fixed header gave up, or the hero would slide up
+       underneath it. mobile-menu.js tags the correct parent with
+       [data-hdr-parent] and publishes the closed bar height as --hdr-h; doing the
+       padding here rather than as an inline style write means it simply stops
+       applying above 640px instead of needing to be cleared (an inline write that
+       missed its clearing resize event left a stale 94px gap on desktop). */
+    [data-hdr-parent] { padding-top: var(--hdr-h, 84px) !important; }
+
+    /* Going fixed lifts the header out of its parent, so it also escapes that
+       parent's `padding: 0 clamp(32px, 5vw, 60px)` — which is where the four
+       case-study headers got their gutter from (their own padding is `24px 0`,
+       i.e. none horizontally). Without this the logo would sit against the screen
+       edge. index.html already carries its own horizontal padding, so it is not
+       in this rule. */
+    [style*="justify-content: space-between"][style*="padding: 24px 0"] {
+      padding-left: clamp(32px, 5vw, 60px) !important;
+      padding-right: clamp(32px, 5vw, 60px) !important;
+    }
+
+    /* About and the three case studies have a chapter rail that ALSO sticks at
+       top:3px and would end up underneath the header. Push it below, using the
+       closed bar height that mobile-menu.js measures and publishes as --hdr-h.
+       This selector matches exactly one element on those four pages and none on
+       index (which has no rail) — verified. */
+    [style*="position: sticky"][style*="top: 3px"] {
+      top: calc(3px + var(--hdr-h, 84px)) !important;
+    }
+
+    nav { display: contents !important; }
+
+    /* BAR group: logo stays in flow, the mailto CTA takes the free space to its
+       left so it and the toggle sit together at the right edge. */
+    nav > a[href^="mailto:"] { order: 0 !important; margin-left: auto !important; }
+    [data-menu-toggle] { order: 0 !important; }
+
+    /* PANEL group: flex-basis 100% puts each item on its own line below the bar,
+       so no explicit line-break element is needed. Hidden until the header is
+       marked open. `a:not([href^="mailto:"])` is what separates the three page
+       links from the CTA — verified the CTA is the only mailto link in the nav on
+       all five pages. */
+    nav > a:not([href^="mailto:"]),
+    nav > [data-prefs] {
+      order: 1 !important;
+      flex-basis: 100% !important;
+      display: none !important;
+    }
+    [data-menu="open"] nav > a:not([href^="mailto:"]) {
+      display: block !important;
+      padding: 12px 0 !important;
+    }
+    [data-menu="open"] nav > [data-prefs] {
+      display: flex !important;
+      padding: 6px 0 14px !important;
+    }
+
+    /* The toggle: 44px tap target, three bars that cross into an X when open. */
+    [data-menu-toggle] {
+      display: inline-flex;
+      width: 44px; height: 44px; padding: 0;
+      flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      appearance: none; -webkit-appearance: none;
+      background: none; cursor: pointer;
+      color: var(--ink, #14130E);
+      border: 1px solid rgba(var(--inkrgb, 20,19,14),.2);
+      border-radius: 999px;
+    }
+    [data-menu-toggle] span {
+      display: block; width: 18px; height: 1.5px; border-radius: 2px;
+      background: currentColor;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+    [data-menu="open"] [data-menu-toggle] span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    [data-menu="open"] [data-menu-toggle] span:nth-child(2) { opacity: 0; }
+    [data-menu="open"] [data-menu-toggle] span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
     /* Hero stats strip: the third item carries `margin-left: auto; text-align:
        right` so the discipline tags sit flush right in the desktop row. Once the
@@ -997,6 +1106,174 @@ class Component extends DCLogic {
     if (this._onScroll) window.removeEventListener('scroll', this._onScroll);
   }
 }
+</script>
+<script data-mobile-menu>
+/* ===========================================================================
+   Mobile menu toggle — appended to the design-tool export by
+   tools/apply-responsive-fixes.sh. Paired with the sticky-bar CSS in
+   tools/responsive-fixes.css; neither works without the other.
+
+   WHAT IT DOES
+     Appends one <button data-menu-toggle> to the header and toggles
+     data-menu="open" on that header. All layout is CSS (see the STICKY BAR +
+     HAMBURGER section of the CSS); this file only owns state and a11y.
+
+   WHY IT APPENDS AND NEVER REPARENTS
+     The header is React-rendered by support.js. Moving existing nodes risks them
+     being reconciled back on the next render. Appending a new node is safe —
+     verified the appended button survives both a prefs-dropdown open and a
+     language switch. So the panel is built with CSS `order`, not DOM moves.
+
+   WHY IT WAITS FOR #dc-root — DO NOT REMOVE THIS GATE
+     <nav> exists TWICE. Once as markup inside the <x-dc> template, which is in the
+     DOM at parse time, and once in the output support.js renders from it. Querying
+     document for 'nav' finds the TEMPLATE copy, and appending there is worse than
+     useless: support.js reads dc.innerHTML before replacing <x-dc>, so the button
+     gets serialised into the template and React re-creates a *copy* of it — a copy
+     with no event listeners. You get a hamburger that renders and does nothing.
+     (That failure was observed, not theorised.) support.js replaces <x-dc> with
+     <div id="dc-root">, so the presence of #dc-root is the signal that the real
+     tree exists; scope every query to it.
+
+   Vanilla, no dependencies, nothing at build time.
+   =========================================================================== */
+(function () {
+  'use strict';
+
+  var PHONE = '(max-width: 640px)';
+  var state = { header: null, btn: null };
+
+  function setOpen(open) {
+    if (!state.header || !state.btn) return;
+    if (open) state.header.setAttribute('data-menu', 'open');
+    else state.header.removeAttribute('data-menu');
+    state.btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  function isOpen() {
+    return !!state.header && state.header.getAttribute('data-menu') === 'open';
+  }
+
+  /* Publish the CLOSED bar height and pay for the flow space the fixed header no
+     longer occupies.
+
+     Measured CLOSED on purpose: both the chapter-rail offset and the parent's
+     padding should track the bar, not the expanded panel — otherwise opening the
+     menu would shove the whole page down.
+
+     Two consumers, both CSS:
+       --hdr-h           the chapter rail offsets below the bar; the header's
+                         parent uses it as padding-top to replace the flow space
+                         the fixed header gave up
+       [data-hdr-parent] marks WHICH element that parent is
+
+     The marker attribute exists because CSS cannot identify that element on its
+     own: on the case studies two different wrappers carry a byte-identical style
+     attribute, so any [style*="…"] selector would pad the wrong one too. JS knows
+     which is the real parent, so it tags it and lets CSS own the media scoping.
+
+     Doing the padding in CSS rather than as an inline style write is deliberate:
+     an inline write has to be actively CLEARED above the phone tier, and if the
+     clearing resize event is missed the desktop layout keeps a stale 94px gap —
+     observed. A media-query rule simply stops applying, so it cannot go stale.
+
+     Re-applied on every ResizeObserver tick so it self-heals if a React render
+     ever drops the attribute. */
+  function publishHeight() {
+    if (!state.header) return;
+    var wasOpen = isOpen();
+    if (wasOpen) state.header.removeAttribute('data-menu');
+
+    var h = Math.round(state.header.getBoundingClientRect().height);
+    if (h > 0) document.documentElement.style.setProperty('--hdr-h', h + 'px');
+    var parent = state.header.parentElement;
+    if (parent && !parent.hasAttribute('data-hdr-parent')) {
+      parent.setAttribute('data-hdr-parent', '');
+    }
+
+    if (wasOpen) state.header.setAttribute('data-menu', 'open');
+  }
+
+  function init() {
+    // Gate on the rendered root, never on document — see the header comment.
+    var root = document.getElementById('dc-root');
+    if (!root) return false;
+
+    var nav = root.querySelector('nav');
+    if (!nav || !nav.parentElement) return false;
+
+    var header = nav.parentElement;
+    if (header.querySelector('[data-menu-toggle]')) return true; // already wired
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('data-menu-toggle', '');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', 'Menu');
+    btn.appendChild(document.createElement('span'));
+    btn.appendChild(document.createElement('span'));
+    btn.appendChild(document.createElement('span'));
+    header.appendChild(btn);
+
+    state.header = header;
+    state.btn = btn;
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(!isOpen());
+    });
+
+    // Escape closes and returns focus to the toggle.
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen()) { setOpen(false); btn.focus(); }
+    });
+
+    // A tap outside the header closes it.
+    document.addEventListener('click', function (e) {
+      if (isOpen() && !header.contains(e.target)) setOpen(false);
+    });
+
+    // Choosing a page link closes the panel. The mailto CTA lives in the bar and
+    // the prefs pill must stay open to be usable, so neither closes it.
+    nav.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a') : null;
+      if (!a || !nav.contains(a)) return;
+      if ((a.getAttribute('href') || '').indexOf('mailto:') === 0) return;
+      setOpen(false);
+    });
+
+    // Leaving the phone tier must not leave a stale open state behind.
+    var mq = window.matchMedia(PHONE);
+    var onChange = function () { if (!mq.matches) setOpen(false); publishHeight(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+
+    window.addEventListener('resize', publishHeight);
+
+    /* The header can still be 0px tall at this point — support.js renders
+       asynchronously, and publishHeight() deliberately refuses to publish a zero.
+       A ResizeObserver catches the real height whenever it settles (first paint,
+       font swap, language switch changing label widths), so --hdr-h is always
+       correct rather than only correct on load. */
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(publishHeight).observe(header);
+    } else {
+      var n = 0, poll = setInterval(function () {
+        publishHeight();
+        if (++n > 20) clearInterval(poll);
+      }, 150);
+    }
+    publishHeight();
+    return true;
+  }
+
+  var tries = 0;
+  (function wait() {
+    try { if (init()) return; } catch (err) { return; }   // never break the page
+    if (++tries > 60) return;                              // ~6s then give up
+    setTimeout(wait, 100);
+  })();
+})();
 </script>
 </body>
 </html>

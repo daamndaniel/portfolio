@@ -53,6 +53,12 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
   }
 
+  /* mobile-menu.js appends the hamburger toggle to the header on every page. It is
+     only meaningful in the phone tier, where the sticky bar collapses the nav, so
+     hide it everywhere else. Declared here (outside any media query) so desktop is
+     covered even though the button exists in the DOM at all widths. */
+  [data-menu-toggle] { display: none; }
+
   /* The before/after comparison sliders set `touch-action: none` and call
      setPointerCapture unconditionally on pointerdown, so on any touch screen a
      vertical swipe starting inside the widget dragged the handle instead of
@@ -82,32 +88,130 @@
 
   @media (max-width: 640px) {
 
-    /* HEADER, two rows: [logo ............ EN pill] / [Home Work About Let's talk].
-       One row for all five is impossible at 375px — demand is 429px against 311px
-       of content, and compacting everything (12px gap, smaller pills, 15px type)
-       only reached 325px while breaking 44px tap targets.
+    /* STICKY BAR + HAMBURGER.  Bar: [logo ......... Let's talk ☰]
+                               Panel: Home / Work / About / EN+theme pill
+
+       WHY. The case studies run 4,000-17,000px tall, so reaching the nav meant
+       scrolling all the way back up. A sticky header fixes that — but the previous
+       two-row header was ~140px, i.e. 17% of an 812px phone, too much to freeze
+       on screen. Collapsing the three page links and the prefs pill behind a
+       toggle brings the bar to one row, which is what makes sticky affordable.
+       The two changes are therefore coupled, not independent.
+
+       The "Let's talk" CTA deliberately stays IN the bar rather than in the panel.
+       It is the one conversion action on the site, and it fits: logo 53 + CTA 128
+       + toggle 44 + gaps = 249px of the 311px available at 375px. Only secondary
+       navigation is hidden, which is the part a hamburger should hide.
+
+       Desktop keeps the full visible nav — hiding three links behind a tap
+       measurably reduces engagement, and above 640px there is room for them. So
+       none of this applies above the phone tier.
+
        `display: contents` drops the <nav> box so its children become direct flex
-       items of the header; the prefs pill then sits beside the logo (order 0) and
-       the links + CTA share the next row (order 1). The ::after is a zero-height
-       full-width flex item that forces the break between the two order groups —
-       no magic offsets, so it holds at any gutter width.
-       Measured: logo@32 / EN right-inset 32, vertical centres 0px apart;
-       row 2 Home@32 Work@94 About@151 Let's-talk@215. At 320px it degrades to
-       [Home Work About] / [EN Let's talk] with no overflow.
-       The two ::after selectors cover the two header variants: index.html uses
-       clamp() padding, the other four use `padding: 24px 0`.
+       items of the header, which is what lets CSS `order` split them into a bar
+       group and a panel group without moving a single node in the DOM. Avoiding
+       DOM surgery matters here: the tree is React-rendered, and reparenting nodes
+       risks them being reconciled back. (A JS-*appended* node is safe — verified
+       it survives both a prefs-dropdown open and a language switch.)
        VERIFIED the <nav> landmark survives display:contents in the accessibility
        tree; the old Chrome/Safari semantics bug is fixed in Chrome 89+/Safari 15.4+. */
-    nav { display: contents !important; }
-    nav > [data-prefs] { order: 0 !important; }
-    nav > a { order: 1 !important; }
-    [style*="justify-content: space-between"][style*="padding: clamp(20px, 5vw, 28px)"]::after,
-    [style*="justify-content: space-between"][style*="padding: 24px 0"]::after {
-      content: '' !important;
-      flex-basis: 100% !important;
-      height: 0 !important;
-      order: 0 !important;
+
+    /* The header pins just under the 3px scroll-progress bar (top:0, z 6 on index
+       / 30 elsewhere). z 25 keeps it above the chapter rail (z 20).
+
+       WHY fixed AND NOT sticky. `position: sticky` was tried first and only sticks
+       within its own parent's box — measured 1452px here, so the header released
+       right after the hero and scrolled away, which is the exact problem this is
+       meant to solve on 4,000-17,000px case studies. The header's parent is a
+       max-width wrapper, not a page-height one, and making a higher ancestor
+       sticky would pin the hero too. fixed is the only option that survives the
+       whole page; mobile-menu.js pays for the lost flow space by setting
+       padding-top on that parent (and re-applies it on every ResizeObserver tick,
+       so it self-heals if React ever resets the inline style). */
+    [style*="justify-content: space-between"][style*="padding: clamp(20px, 5vw, 28px)"],
+    [style*="justify-content: space-between"][style*="padding: 24px 0"] {
+      position: fixed !important;
+      top: 3px !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 25 !important;
+      background: var(--pg, #F2F1EC) !important;
     }
+
+    /* Replace the flow space the fixed header gave up, or the hero would slide up
+       underneath it. mobile-menu.js tags the correct parent with
+       [data-hdr-parent] and publishes the closed bar height as --hdr-h; doing the
+       padding here rather than as an inline style write means it simply stops
+       applying above 640px instead of needing to be cleared (an inline write that
+       missed its clearing resize event left a stale 94px gap on desktop). */
+    [data-hdr-parent] { padding-top: var(--hdr-h, 84px) !important; }
+
+    /* Going fixed lifts the header out of its parent, so it also escapes that
+       parent's `padding: 0 clamp(32px, 5vw, 60px)` — which is where the four
+       case-study headers got their gutter from (their own padding is `24px 0`,
+       i.e. none horizontally). Without this the logo would sit against the screen
+       edge. index.html already carries its own horizontal padding, so it is not
+       in this rule. */
+    [style*="justify-content: space-between"][style*="padding: 24px 0"] {
+      padding-left: clamp(32px, 5vw, 60px) !important;
+      padding-right: clamp(32px, 5vw, 60px) !important;
+    }
+
+    /* About and the three case studies have a chapter rail that ALSO sticks at
+       top:3px and would end up underneath the header. Push it below, using the
+       closed bar height that mobile-menu.js measures and publishes as --hdr-h.
+       This selector matches exactly one element on those four pages and none on
+       index (which has no rail) — verified. */
+    [style*="position: sticky"][style*="top: 3px"] {
+      top: calc(3px + var(--hdr-h, 84px)) !important;
+    }
+
+    nav { display: contents !important; }
+
+    /* BAR group: logo stays in flow, the mailto CTA takes the free space to its
+       left so it and the toggle sit together at the right edge. */
+    nav > a[href^="mailto:"] { order: 0 !important; margin-left: auto !important; }
+    [data-menu-toggle] { order: 0 !important; }
+
+    /* PANEL group: flex-basis 100% puts each item on its own line below the bar,
+       so no explicit line-break element is needed. Hidden until the header is
+       marked open. `a:not([href^="mailto:"])` is what separates the three page
+       links from the CTA — verified the CTA is the only mailto link in the nav on
+       all five pages. */
+    nav > a:not([href^="mailto:"]),
+    nav > [data-prefs] {
+      order: 1 !important;
+      flex-basis: 100% !important;
+      display: none !important;
+    }
+    [data-menu="open"] nav > a:not([href^="mailto:"]) {
+      display: block !important;
+      padding: 12px 0 !important;
+    }
+    [data-menu="open"] nav > [data-prefs] {
+      display: flex !important;
+      padding: 6px 0 14px !important;
+    }
+
+    /* The toggle: 44px tap target, three bars that cross into an X when open. */
+    [data-menu-toggle] {
+      display: inline-flex;
+      width: 44px; height: 44px; padding: 0;
+      flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      appearance: none; -webkit-appearance: none;
+      background: none; cursor: pointer;
+      color: var(--ink, #14130E);
+      border: 1px solid rgba(var(--inkrgb, 20,19,14),.2);
+      border-radius: 999px;
+    }
+    [data-menu-toggle] span {
+      display: block; width: 18px; height: 1.5px; border-radius: 2px;
+      background: currentColor;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+    [data-menu="open"] [data-menu-toggle] span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    [data-menu="open"] [data-menu-toggle] span:nth-child(2) { opacity: 0; }
+    [data-menu="open"] [data-menu-toggle] span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
     /* Hero stats strip: the third item carries `margin-left: auto; text-align:
        right` so the discipline tags sit flush right in the desktop row. Once the
