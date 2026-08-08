@@ -1,0 +1,169 @@
+  /* ===========================================================================
+     RESPONSIVE FIXES — hand-added on top of a design-tool export
+     ---------------------------------------------------------------------------
+     The export ships ZERO @media queries: fluid clamp() typography was the only
+     responsive mechanism, so every fixed-column grid stayed fixed on a phone and
+     one auto-fit floor overflowed. Every rule below was measured in a real
+     browser at 320 / 375 / 785 / 1425px on all five pages, and each one records
+     the number it fixes so a future reader can re-check it.
+
+     >>> RE-EXPORTING FROM THE DESIGN TOOL WILL DELETE THIS BLOCK. <<<
+     Re-apply it with:   bash tools/apply-responsive-fixes.sh
+     This file is the single source of truth; the script copies it into each
+     page's <helmet> <style>. Edit here, never in the five HTML files.
+
+     ---------------------------------------------------------------------------
+     TWO TRAPS. Both were hit while writing this. Read before editing.
+
+     1. SELECTORS MUST MATCH THE RENDERED DOM, NOT THE SOURCE BYTES.
+        The runtime assigns inline styles through the CSSOM, so the live style
+        attribute is RE-SERIALISED. `minmax(0,200px)` in the file becomes
+        `minmax(0px, 200px)` in the DOM; `margin: 0 -16px` becomes
+        `margin: 0px -16px`. An [style*="…"] selector written from the file
+        matches NOTHING and fails SILENTLY — the worst outcome here. Always check
+        a new selector with document.querySelectorAll() in the browser.
+
+     2. NEVER PUT transform OR opacity IN AN !important RULE IN THIS FILE.
+        The scroll-reveal observer unhides elements by writing those two
+        properties INLINE. A stylesheet !important beats an inline write, so the
+        page would stay permanently invisible.
+
+     ---------------------------------------------------------------------------
+     BREAKPOINTS (both derived, neither guessed)
+       1023px  structures that only work at desktop width.
+        640px  the phone tier: the exact width where clamp(32px, 5vw, 60px)
+               reaches its 32px floor (5vw = 32px at 640px), i.e. where the
+               fluid system stops adapting and fixed insets start to dominate.
+     =========================================================================== */
+
+  /* --- Fixes that are no-ops above the phone tier, so they need no breakpoint -- */
+
+  /* Hero portrait drifted up to 387px right of the text gutter (h1 at l=35,
+     portrait at l=430 @845px). `margin-left: auto` already computes to 0 while
+     the hero is side-by-side — the text column's flex-grow:999 absorbs all free
+     space — and only bites once flex-wrap stacks the portrait. Verified 0 at
+     920px and 1425px, so forcing 0 changes nothing on desktop. */
+  [style*="flex: 1 1 300px"][style*="margin-left: auto"] { margin-left: 0 !important; }
+
+  /* auto-fit floor of 340px exceeded the 311px available at 375px, so the track
+     rendered 340px inside a 311px box and clipped 29px of content. min() guards
+     it and resolves to exactly 340px wherever 340px fits, so desktop is
+     unchanged (verified "632px 632px 0px" at 1425px, same as before). */
+  [style*="minmax(340px, 1fr)"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+  }
+
+  /* The before/after comparison sliders set `touch-action: none` and call
+     setPointerCapture unconditionally on pointerdown, so on any touch screen a
+     vertical swipe starting inside the widget dragged the handle instead of
+     scrolling the page. `pan-y` returns vertical panning to the browser while
+     still delivering horizontal drags; the existing pointercancel handler
+     already resets state, so no JS change is needed. Deliberately NOT inside a
+     media query — touch-action does not affect mouse drags, and touch tablets
+     above 640px need this too. */
+  [data-compare] { touch-action: pan-y !important; }
+
+  /* --- Structures that require desktop width ---------------------------------- */
+
+  @media (max-width: 1023px) {
+    /* Case-study rail + content + aside. The CENTRE column — the actual content —
+       computed 42px at 375px, went negative below 600px, and reached only 160px
+       at 768px. Usable again at 1024px (416px), which is where this tier ends.
+       Both spellings are listed on purpose: the second is the source-byte form,
+       which currently matches nothing because of trap #1 above, and is kept only
+       so the rule survives if the runtime ever stops re-serialising. */
+    [style*="minmax(0px, 200px) 1fr minmax(0px, 280px)"],
+    [style*="minmax(0,200px) 1fr minmax(0,280px)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* --- Phone tier -------------------------------------------------------------- */
+
+  @media (max-width: 640px) {
+
+    /* HEADER, two rows: [logo ............ EN pill] / [Home Work About Let's talk].
+       One row for all five is impossible at 375px — demand is 429px against 311px
+       of content, and compacting everything (12px gap, smaller pills, 15px type)
+       only reached 325px while breaking 44px tap targets.
+       `display: contents` drops the <nav> box so its children become direct flex
+       items of the header; the prefs pill then sits beside the logo (order 0) and
+       the links + CTA share the next row (order 1). The ::after is a zero-height
+       full-width flex item that forces the break between the two order groups —
+       no magic offsets, so it holds at any gutter width.
+       Measured: logo@32 / EN right-inset 32, vertical centres 0px apart;
+       row 2 Home@32 Work@94 About@151 Let's-talk@215. At 320px it degrades to
+       [Home Work About] / [EN Let's talk] with no overflow.
+       The two ::after selectors cover the two header variants: index.html uses
+       clamp() padding, the other four use `padding: 24px 0`.
+       VERIFIED the <nav> landmark survives display:contents in the accessibility
+       tree; the old Chrome/Safari semantics bug is fixed in Chrome 89+/Safari 15.4+. */
+    nav { display: contents !important; }
+    nav > [data-prefs] { order: 0 !important; }
+    nav > a { order: 1 !important; }
+    [style*="justify-content: space-between"][style*="padding: clamp(20px, 5vw, 28px)"]::after,
+    [style*="justify-content: space-between"][style*="padding: 24px 0"]::after {
+      content: '' !important;
+      flex-basis: 100% !important;
+      height: 0 !important;
+      order: 0 !important;
+    }
+
+    /* Hero stats strip: the third item carries `margin-left: auto; text-align:
+       right` so the discipline tags sit flush right in the desktop row. Once the
+       strip wraps to stacked lines that reads as an indent against the two
+       left-aligned lines above it. All three now start at x=32. */
+    [style*="flex: 1 1 220px"][style*="text-align: right"] {
+      margin-left: 0 !important;
+      text-align: left !important;
+    }
+
+    /* Work-card metric tiles were 93px per tile at 375px. Reflow to fit. */
+    [style*="grid-template-columns: repeat(3, 1fr)"] {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr)) !important;
+    }
+
+    /* The one genuine 2-column content pair (163px columns, overflowing).
+       Targets `gap: 1px` ON PURPOSE: 10 of the 11 `1fr 1fr` grids in this site
+       are the language/theme toggle pairs, which use `gap: 2px` and MUST stay
+       side by side. A blanket "collapse all 1fr 1fr" rule would break all ten. */
+    [style*="grid-template-columns: 1fr 1fr; gap: 1px"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Case-study hero meta row is flex-wrap:nowrap, which crushed the status pill
+       until "In implementation" wrapped to 3 line-heights inside a 40px
+       single-line rounded pill. The :not([style*="padding"]) is load-bearing: the
+       six friction rows on judged-sports share the same three leading
+       declarations and differ only by `padding: 20px 24px`, and they are
+       intentionally nowrap. Substring alone matches 7 elements; this matches 1. */
+    [style*="display: flex; align-items: center; gap: 16px"]:not([style*="padding"]) {
+      flex-wrap: wrap !important;
+    }
+
+    /* 34 list rows carry `margin: 0 -16px` with a compensating `padding: <v> 16px`,
+       so their border-top divider and hover fill sat 16px OUTSIDE the page gutter
+       while every heading and paragraph sat on it. At 360px the row box spanned
+       16 -> 344 while all text sat at x=32, putting the divider at half the text
+       inset. Zeroing the margin and the matching horizontal padding is
+       text-neutral by construction (-16 + 16 = 0 either way). Above 640px the
+       gutter grows and the same overhang reads as a deliberate bleed, so desktop
+       keeps it. */
+    [data-result-row], [data-principle], [data-next-item] {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+
+    /* Stacked button pairs shared a left edge but had different intrinsic widths
+       (hero 192 vs 241; About 196 vs 317), leaving ragged right edges. Equal full
+       width lines both edges up. Covers the hero pair (16px 28px) and every
+       footer pair (16px 32px) on all five pages, and incidentally contains
+       About's email button, which rendered 317px inside a 311px column. */
+    [style*="padding: 16px 28px"],
+    [style*="padding: 16px 32px"] {
+      width: 100% !important;
+      justify-content: center !important;
+    }
+  }

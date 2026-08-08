@@ -25,6 +25,35 @@ there are no subdirectories, so every page and `support.js`/`assets/` reference 
 the same depth. `404.html` rescues trailing-slash URLs and the old `*.dc.html` paths
 (kept as redirect stubs) so existing links keep working.
 
+## Responsive fixes — read this before re-exporting
+
+The design-tool export ships **zero `@media` queries**: fluid `clamp()` typography was the
+only responsive mechanism, so every fixed-column grid stayed fixed on a phone. The media
+queries that make the site work on mobile are hand-written and live in:
+
+| File | Role |
+|---|---|
+| `tools/responsive-fixes.css` | The CSS. **Single source of truth — edit here.** |
+| `tools/apply-responsive-fixes.sh` | Copies it into each page's `<helmet>` `<style>`. |
+
+**Re-exporting from the design tool regenerates the five HTML files and deletes this CSS.**
+Put it back with:
+
+```bash
+bash tools/apply-responsive-fixes.sh
+```
+
+The script is idempotent, asserts its own results, and takes `--check` to verify without
+writing. Nothing runs at deploy time — it's a one-shot script you run by hand, so it does
+not make this a build pipeline.
+
+Two traps are documented at the top of the CSS file and worth knowing before you touch it:
+selectors must be checked against the **rendered DOM** (the runtime re-serialises inline
+styles, so `minmax(0,200px)` in the file becomes `minmax(0px, 200px)` live, and a selector
+written from the source silently matches nothing); and no `!important` rule may set
+`transform` or `opacity`, because the scroll-reveal observer writes those inline and a
+stylesheet `!important` would beat it and leave pages blank.
+
 ## Constraints — don't "fix" these
 
 - **Keep everything flat at the repo root**, with `assets/` beside it. All paths are
@@ -33,6 +62,9 @@ the same depth. `404.html` rescues trailing-slash URLs and the old `*.dc.html` p
 - `support.js` pulls React from unpkg at runtime, so the site needs internet access on
   first load — that's expected, not a bug.
 - Filenames in `assets/` and the `.dc.html` legacy files matter — don't rename or move them.
+- The language/theme toggles are `1fr 1fr` grids with `gap: 2px`. Ten of the eleven
+  `1fr 1fr` grids in the site are those toggles, so never write a blanket "collapse all
+  two-column grids" rule — it breaks every one of them.
 
 ## Known gaps
 
