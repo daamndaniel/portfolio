@@ -35,6 +35,7 @@
 
 
 
+
   /* ===========================================================================
      RESPONSIVE FIXES — hand-added on top of a design-tool export
      ---------------------------------------------------------------------------
@@ -132,6 +133,30 @@
   [style*="rgba(20, 19, 14, 0.55)"] {
     background: rgba(20, 19, 14, .78) !important;
   }
+
+  /* WCAG 1.4.3, HOVER STATE. `a:hover { opacity: .72 }` (page line 20) MULTIPLIES
+     into whatever alpha the link already has, because opacity composites the whole
+     element a second time. A link coloured rgba(ink,.66) therefore hovers at an
+     effective .66 x .72 = .4752, which measures 3.16:1 in light and 4.48:1 in dark
+     — both under 4.5:1. The criterion applies to hover, not just to rest, and this
+     hits ~37 anchors: every chapter-nav link, the back-links, and the mini-card
+     wrappers. Same arithmetic ruins the footer middot, which nests opacity .45
+     inside .66 text for an effective .297 => 1.94:1.
+
+     Fix by expressing hover as COLOUR instead of transparency, which is what the
+     export's own `style-hover` attributes already do everywhere else. Result:
+     6.97:1 light / 6.87:1 dark.
+
+     Note the deliberate absence of !important. This block is injected into the SAME
+     <style> element as the `a:hover` rule and lands AFTER it (verified: rule at
+     offset ~1096, this block at ~1648, both inside one <style>), so equal
+     specificity wins on source order. That matters — an !important on `opacity`
+     would violate trap #2 above and break the scroll-reveal observer. */
+  a:hover { opacity: 1; }
+  a[data-chapter-link]:hover,
+  a[data-mini-card]:hover,
+  a[data-case-card]:hover,
+  a[data-next-item]:hover { color: var(--acc, #1B3BD8); }
 
   /* WCAG 1.4.11 Non-text Contrast. The card / mini-card "open case study" arrow
      icons are also written by JS on mouseenter and mouseleave
