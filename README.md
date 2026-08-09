@@ -33,8 +33,14 @@ queries that make the site work on mobile are hand-written and live in:
 
 | File | Role |
 |---|---|
-| `tools/responsive-fixes.css` | The CSS. **Single source of truth — edit here.** |
-| `tools/apply-responsive-fixes.sh` | Copies it into each page's `<helmet>` `<style>`. |
+| `tools/responsive-fixes.css` | The CSS — responsive **and** accessibility. **Single source of truth.** |
+| `tools/mobile-menu.js` | Sticky-bar hamburger toggle (mobile only). |
+| `tools/apply-responsive-fixes.sh` | Injects both, plus byte-level contrast fixes. |
+
+It also carries the accessibility work: a WCAG audit fixed five measured contrast
+failures (all verified in **both** themes), raised the focus ring to 2px for WCAG 2.2
+SC 2.4.11, and wired `prefers-reduced-motion` to the `calm` path the page script
+already had. The script asserts each of those so they cannot silently regress.
 
 **Re-exporting from the design tool regenerates the five HTML files and deletes this CSS.**
 Put it back with:

@@ -29,11 +29,69 @@ CHECK_ONLY=0
 [ -f "$CSS" ] || { echo "FAIL: $CSS is missing"; exit 1; }
 [ -f "$JS"  ] || { echo "FAIL: $JS is missing";  exit 1; }
 
+# ---------------------------------------------------------------------------
+# TOKEN FIXES — contrast failures that cannot be fixed from the stylesheet.
+#
+# These are byte substitutions in the exported markup, not CSS overrides, for a
+# specific reason: the failing declarations carry a var() (e.g.
+# `rgba(var(--pgrgb, 242,241,236),.5)`), and an [style*="…"] selector written
+# from the source bytes matches nothing once support.js re-serialises the
+# attribute through the CSSOM. Editing the value is the only reliable route, and
+# putting it here keeps it re-runnable after a re-export.
+#
+# Every ratio below was computed twice (independently) from the WCAG relative
+# luminance formula, in BOTH themes.
+# ---------------------------------------------------------------------------
+token_fixes() {
+  local f="$1"
+  python3 - "$f" <<'PY'
+import sys
+p=sys.argv[1]; s=open(p,encoding='utf-8').read(); n=0
+
+# 1. Eyebrow/index labels inside inverted panels. Both the panel background and
+#    this token invert with the theme, so alpha .5 flips from 4.83:1 (light,
+#    barely) to 3.40:1 (dark, FAIL at 12px/400). .66 gives 7.58:1 light and
+#    5.70:1 dark, and folds a one-off alpha into the .66 step already used by
+#    ~310 other labels. All 17 uses are `color:` — verified, none are
+#    background or border, so raising it cannot darken a fill.
+a='color: rgba(var(--pgrgb, 242,241,236),.5)'
+b='color: rgba(var(--pgrgb, 242,241,236),.66)'
+n+=s.count(a); s=s.replace(a,b)
+
+# 2. Hardcoded #FFF on the accent. --acc inverts (#1B3BD8 light -> #7E97FF dark)
+#    but #FFF does not, so white-on-accent goes 7.88:1 light -> 2.71:1 dark:
+#    fails 1.4.3, and fails 1.4.11 too for the 46px slider handle, which is a
+#    control affordance needing 3:1. var(--pg) inverts with the accent and gives
+#    6.97:1 light / 6.87:1 dark. Matches the trailing ';' so the two
+#    `background: #FFFFFF` mockup fills are not touched.
+a='color: #FFF;'; b='color: var(--pg, #F2F1EC);'
+n+=s.count(a); s=s.replace(a,b)
+
+# 3. Card "open case study" arrow icons at alpha .35 measured 2.23:1 light and
+#    2.98:1 dark — both under the 3:1 that 1.4.11 requires of a meaningful icon.
+#    .55 gives 3.97:1 / 5.60:1. Two substitutions because four mouseleave
+#    handlers write the value back in JS; changing only the markup would restore
+#    the failing colour the first time a pointer left a card.
+#    Deliberately scoped to `color:` — about.html uses the same .35 value as a
+#    decorative BACKGROUND, which has no contrast requirement and is left alone.
+a='color: rgba(var(--inkrgb, 20,19,14),.35)'
+b='color: rgba(var(--inkrgb, 20,19,14),.55)'
+n+=s.count(a); s=s.replace(a,b)
+a="arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.35)'"
+b="arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.55)'"
+n+=s.count(a); s=s.replace(a,b)
+
+open(p,'w',encoding='utf-8').write(s)
+print(f'    token fixes applied: {n}')
+PY
+}
+
 applied=0; already=0; missing=0
 for f in "${PAGES[@]}"; do
   if [ ! -f "$f" ]; then echo "  MISSING  $f"; missing=$((missing+1)); continue; fi
   if grep -q "$MARKER" "$f"; then echo "  ok       $f (already patched)"; already=$((already+1)); continue; fi
   if [ $CHECK_ONLY -eq 1 ]; then echo "  NEEDS    $f"; continue; fi
+  token_fixes "$f"
   python3 - "$f" "$CSS" "$JS" <<'PY'
 import sys
 page, cssfile, jsfile = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -81,6 +139,21 @@ assert "CTA excluded from panel" \
 # the toggle must be hidden above the phone tier
 assert "toggle hidden on desktop" \
   "$(grep -c '\[data-menu-toggle\] { display: none; }' "$CSS" | tr -d ' ')" 1
+# a11y: the three measured contrast failures must stay fixed in the markup
+for f in "${PAGES[@]}"; do
+  [ -f "$f" ] || continue
+  assert "no .5 pg-text in $f"  "$(grep -c 'color: rgba(var(--pgrgb, 242,241,236),.5)' "$f" | tr -d ' ')" 0
+  assert "no bare #FFF in $f"   "$(grep -c 'color: #FFF;' "$f" | tr -d ' ')" 0
+  assert "no .35 icon in $f"    "$(grep -c 'color: rgba(var(--inkrgb, 20,19,14),.35)' "$f" | tr -d ' ')" 0
+done
+# a11y: focus indicator and reduced-motion support must survive future edits
+assert "focus-visible indicator present" \
+  "$(grep -cF ':focus-visible {' "$CSS" | tr -d ' ')" 1
+assert "prefers-reduced-motion block present" \
+  "$(grep -cF '@media (prefers-reduced-motion: reduce)' "$CSS" | tr -d ' ')" 1
+# the mockup URL labels must stay theme-BLIND: a var()-based colour measured 1.15:1
+assert "mockup label colour stays literal" \
+  "$(grep -A2 -F '[style*="rgba(20, 19, 14, 0.07)"]' "$CSS" | grep -c 'var(--inkrgb' | tr -d ' ')" 0
 # the toggle guard must never be collapsed: the collapse rule targets gap:1px only
 assert "collapse rule targets gap:1px only" \
   "$(grep -c 'grid-template-columns: 1fr 1fr; gap: 2px !important' index.html | tr -d ' ')" 0

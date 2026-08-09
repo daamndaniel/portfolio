@@ -26,6 +26,10 @@
 
 
 
+
+
+
+
   /* ===========================================================================
      RESPONSIVE FIXES — hand-added on top of a design-tool export
      ---------------------------------------------------------------------------
@@ -79,6 +83,102 @@
      unchanged (verified "632px 632px 0px" at 1425px, same as before). */
   [style*="minmax(340px, 1fr)"] {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+  }
+
+  /* ===== ACCESSIBILITY =======================================================
+     Findings from a measured audit (contrast ratios computed from composited
+     colours in BOTH themes, not eyeballed). What already passed, recorded so it
+     is not "fixed" later by mistake:
+       full-strength ink text          16.44:1
+       rgba(ink,.66) muted text         5.75:1 light / 7.63:1 dark  (AA, AAA dark)
+       accent #1B3BD8 as link on cream  6.96:1   (dark theme uses #7E97FF, 8.6:1)
+       nothing anywhere sets outline:none, so focus is not suppressed
+       spacing is ~92% on a 4pt grid — coherent, left alone
+     Note every selector below uses the NORMALISED colour form
+     (`rgba(20, 19, 14, 0.07)`): the source bytes read `rgba(20,19,14,.07)` and
+     match NOTHING in the DOM — see trap #1 at the top of this file. Verified
+     against the rendered DOM, 2 and 1 matches respectively. ==================== */
+
+  /* WCAG 1.4.3. The URL labels in the work-card mockups ("twilio.com/contact-sales",
+     "stackbuilders.com") measured 3.25:1 against the 4.5:1 required — 8px text at
+     rgba(ink,.5) on a 7% ink tint.
+
+     These are miniature browser-chrome mockups drawn INSIDE the card screenshots,
+     not site chrome, so they are deliberately theme-blind: their parent mockups are
+     rgb(239,237,231) (light) regardless of the site theme, and the third card's
+     mockup is dark (rgb(26,32,41)) with its own white-alpha pill that already
+     measures 4.91:1 and is left alone.
+
+     Two consequences for the fix, both learned the hard way:
+       - The colour must stay a LITERAL rgba, NOT var(--inkrgb). Making it
+         theme-aware turned the text cream on a light mockup in dark theme and made
+         the ratio WORSE — 1.15:1. Measured, not hypothetical.
+       - The 8px size stays. It is a scaled-down browser bar in a 16px-tall pill;
+         enlarging the type distorts the mockup it is imitating.
+     Raising the alpha alone to .75 takes it to ~6.4:1 in both themes. */
+  [style*="rgba(20, 19, 14, 0.07)"][style*="height: 16px"] {
+    color: rgba(20, 19, 14, .75) !important;
+  }
+
+  /* WCAG 1.4.3. The photo sticker sets cream text on a 55%-opacity dark pill over
+     a photograph — measured 4.38:1, just under. Because the backdrop is an image
+     the ratio is not fully controllable, so raise the pill alpha until the pill
+     itself dominates: at .78 it lands around 13:1 whatever the photo does. */
+  [style*="rgba(20, 19, 14, 0.55)"] {
+    background: rgba(20, 19, 14, .78) !important;
+  }
+
+  /* WCAG 1.4.11 Non-text Contrast. The card / mini-card "open case study" arrow
+     icons are also written by JS on mouseenter and mouseleave
+     (`arrow.style.color = …`, 18 sites), and an inline write beats the style
+     attribute — so raising the alpha in the markup alone was not enough.
+     On the dark "next case" card the arrow was computing to the FALLBACK ink,
+     rgba(20,19,14,.55) over an rgb(20,19,14) card: exactly 1.00:1, i.e. perfectly
+     invisible. PROVEN by probe — the identical declaration on a sibling element in
+     the same subtree resolves to cream correctly, so the custom property is fine
+     and the stale inline value was the whole problem.
+     !important on `color` is the only thing that outranks it. It deliberately does
+     NOT touch `transform`, which those same handlers animate for the hover lift.
+     Resulting ratios: 3.97:1 light, 5.60:1 dark — both clear the 3:1 that 1.4.11
+     asks of a meaningful icon. */
+  [data-card-arrow], [data-mini-arrow] {
+    color: rgba(var(--inkrgb, 20,19,14), .55) !important;
+  }
+
+  /* WCAG 2.2 SC 2.4.11 Focus Appearance. Focus is already VISIBLE — the UA ring
+     shows (verified by real Tab-key focus: outline-style auto, :focus-visible
+     matching), so 2.4.7 passes. But that ring is 1px, under the 2px minimum
+     perimeter 2.4.11 asks for. The accent measures 6.96:1 on cream and 8.6:1 in
+     dark, so it is a safe indicator colour in both themes. */
+  :focus-visible {
+    outline: 2px solid var(--acc, #1B3BD8) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* prefers-reduced-motion. 20-33 elements per page animate on scroll, plus
+     marquee / spin / scan / bob loops. A "calm" path ALREADY EXISTS in the page
+     script — it zeroes --spin/--mq/--scan/--bob — but it is wired to a manual
+     design-tool prop that defaults to false, so the OS preference was ignored
+     entirely. This reuses those same variables and neutralises durations.
+
+     Sets DURATIONS ONLY, never transform or opacity. The scroll-reveal observer
+     unhides elements by writing those two properties inline; an !important here
+     would beat it and leave the page permanently blank (see trap #2). With a
+     near-zero transition duration the reveal still runs — it just lands instantly,
+     which is exactly what a reduced-motion user wants. */
+  @media (prefers-reduced-motion: reduce) {
+    :root, [data-theme-root] {
+      --spin: 0s !important;
+      --mq: 0s !important;
+      --scan: 0s !important;
+      --bob: 0s !important;
+    }
+    *, *::before, *::after {
+      animation-duration: .001s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001s !important;
+    }
+    html { scroll-behavior: auto !important; }
   }
 
   /* mobile-menu.js appends the hamburger toggle to the header on every page. It is
@@ -436,7 +536,7 @@
 
     <section id="opportunity" style="scroll-margin-top: 80px; padding: clamp(56px, 8vw, 96px) 0 0;">
       <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); background: var(--ink, #14130E); color: var(--pg, #F2F1EC); border-radius: 22px; padding: clamp(32px, 5vw, 64px) clamp(28px, 5vw, 56px);">
-        <div style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--pgrgb, 242,241,236),.5);">03 · The opportunity</div>
+        <div style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(var(--pgrgb, 242,241,236),.66);">03 · The opportunity</div>
         <h2 style="margin: 24px 0 0; max-width: 1000px; font-size: clamp(28px, 4.2vw, 44px); font-weight: 500; line-height: 1.14; letter-spacing: -.03em; text-wrap: pretty;">How might we use AI to support more understandable, scalable judging experiences, <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; color: var(--accband, #9FB0FF);">without losing the nuance that makes judged sports special?</span></h2>
         <div style="display: flex; flex-wrap: wrap; gap: clamp(28px, 5vw, 56px); margin-top: clamp(24px, 5vw, 44px); padding-top: 36px; border-top: 1px solid rgba(var(--pgrgb, 242,241,236),.16);">
           <p style="flex: 999 1 360px; min-width: 0; margin: 0; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.66; color: rgba(var(--pgrgb, 242,241,236),.78); text-wrap: pretty;">The challenge is bigger than creating an interface. It is about building trust. Athletes, coaches, judges, organizers, and fans need to understand what the platform is showing, why it matters, and where human expertise remains essential.</p>
@@ -599,12 +699,12 @@
           <a href="sales-landing-cro" data-mini-card="" style="display: flex; flex-wrap: wrap; align-items: center; gap: clamp(14px, 3vw, 20px); padding: 16px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 14px; transition: transform .3s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease;">
             <div style="flex: 0 0 148px; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden;"><div data-mini-cover="" style="width: 100%; height: 100%; display: grid; place-items: center; background: repeating-linear-gradient(135deg, rgba(var(--inkrgb, 20,19,14),.05) 0 9px, rgba(var(--inkrgb, 20,19,14),0) 9px 18px), var(--ph, #E5E2D8); font: 400 10px/1.7 'DM Mono', monospace; letter-spacing: .1em; text-align: center; color: rgba(var(--inkrgb, 20,19,14),.66); transition: transform .45s cubic-bezier(.2,.7,.2,1);"><img src="assets/cro-mini.png" alt="Contact sales landing page CRO" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div>
             <div style="flex: 1 1 250px; min-width: 0;"><div style="font: 400 10px/1 'DM Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Case study 01</div><h3 style="margin: 8px 0 0; font-size: 16px; font-weight: 500; line-height: 1.3; letter-spacing: -.018em; text-wrap: pretty;">Turning high-intent traffic into completed sales conversations</h3></div>
-            <span data-mini-arrow="" style="flex: 0 0 22px; display: inline-flex; justify-content: flex-end; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span>
+            <span data-mini-arrow="" style="flex: 0 0 22px; display: inline-flex; justify-content: flex-end; color: rgba(var(--inkrgb, 20,19,14),.55); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span>
           </a>
           <a href="stack-builders-website" data-mini-card="" style="display: flex; flex-wrap: wrap; align-items: center; gap: clamp(14px, 3vw, 20px); padding: 16px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 14px; transition: transform .3s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease;">
             <div style="flex: 0 0 148px; aspect-ratio: 16/10; border-radius: 10px; overflow: hidden;"><div data-mini-cover="" style="width: 100%; height: 100%; display: grid; place-items: center; background: repeating-linear-gradient(135deg, rgba(var(--inkrgb, 20,19,14),.05) 0 9px, rgba(var(--inkrgb, 20,19,14),0) 9px 18px), var(--ph, #E5E2D8); font: 400 10px/1.7 'DM Mono', monospace; letter-spacing: .1em; text-align: center; color: rgba(var(--inkrgb, 20,19,14),.66); transition: transform .45s cubic-bezier(.2,.7,.2,1);"><img src="assets/sb-mini.png" alt="Stack Builders website redesign" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div>
             <div style="flex: 1 1 250px; min-width: 0;"><div style="font: 400 10px/1 'DM Mono', monospace; letter-spacing: .12em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Case study 02</div><h3 style="margin: 8px 0 0; font-size: 16px; font-weight: 500; line-height: 1.3; letter-spacing: -.018em; text-wrap: pretty;">Turning Stack Builders' website into a stronger first conversation</h3></div>
-            <span data-mini-arrow="" style="flex: 0 0 22px; display: inline-flex; justify-content: flex-end; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span>
+            <span data-mini-arrow="" style="flex: 0 0 22px; display: inline-flex; justify-content: flex-end; color: rgba(var(--inkrgb, 20,19,14),.55); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span>
           </a>
       </div>
     </section>
@@ -1073,7 +1173,7 @@ class Component extends DCLogic {
         card.style.borderColor = 'rgba(var(--inkrgb, 20,19,14),.14)';
         card.style.boxShadow = 'none';
         if (cover) cover.style.transform = 'none';
-        if (arrow) { arrow.style.transform = 'none'; arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.35)'; }
+        if (arrow) { arrow.style.transform = 'none'; arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.55)'; }
       });
     });
   }

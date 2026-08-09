@@ -53,6 +53,102 @@
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
   }
 
+  /* ===== ACCESSIBILITY =======================================================
+     Findings from a measured audit (contrast ratios computed from composited
+     colours in BOTH themes, not eyeballed). What already passed, recorded so it
+     is not "fixed" later by mistake:
+       full-strength ink text          16.44:1
+       rgba(ink,.66) muted text         5.75:1 light / 7.63:1 dark  (AA, AAA dark)
+       accent #1B3BD8 as link on cream  6.96:1   (dark theme uses #7E97FF, 8.6:1)
+       nothing anywhere sets outline:none, so focus is not suppressed
+       spacing is ~92% on a 4pt grid — coherent, left alone
+     Note every selector below uses the NORMALISED colour form
+     (`rgba(20, 19, 14, 0.07)`): the source bytes read `rgba(20,19,14,.07)` and
+     match NOTHING in the DOM — see trap #1 at the top of this file. Verified
+     against the rendered DOM, 2 and 1 matches respectively. ==================== */
+
+  /* WCAG 1.4.3. The URL labels in the work-card mockups ("twilio.com/contact-sales",
+     "stackbuilders.com") measured 3.25:1 against the 4.5:1 required — 8px text at
+     rgba(ink,.5) on a 7% ink tint.
+
+     These are miniature browser-chrome mockups drawn INSIDE the card screenshots,
+     not site chrome, so they are deliberately theme-blind: their parent mockups are
+     rgb(239,237,231) (light) regardless of the site theme, and the third card's
+     mockup is dark (rgb(26,32,41)) with its own white-alpha pill that already
+     measures 4.91:1 and is left alone.
+
+     Two consequences for the fix, both learned the hard way:
+       - The colour must stay a LITERAL rgba, NOT var(--inkrgb). Making it
+         theme-aware turned the text cream on a light mockup in dark theme and made
+         the ratio WORSE — 1.15:1. Measured, not hypothetical.
+       - The 8px size stays. It is a scaled-down browser bar in a 16px-tall pill;
+         enlarging the type distorts the mockup it is imitating.
+     Raising the alpha alone to .75 takes it to ~6.4:1 in both themes. */
+  [style*="rgba(20, 19, 14, 0.07)"][style*="height: 16px"] {
+    color: rgba(20, 19, 14, .75) !important;
+  }
+
+  /* WCAG 1.4.3. The photo sticker sets cream text on a 55%-opacity dark pill over
+     a photograph — measured 4.38:1, just under. Because the backdrop is an image
+     the ratio is not fully controllable, so raise the pill alpha until the pill
+     itself dominates: at .78 it lands around 13:1 whatever the photo does. */
+  [style*="rgba(20, 19, 14, 0.55)"] {
+    background: rgba(20, 19, 14, .78) !important;
+  }
+
+  /* WCAG 1.4.11 Non-text Contrast. The card / mini-card "open case study" arrow
+     icons are also written by JS on mouseenter and mouseleave
+     (`arrow.style.color = …`, 18 sites), and an inline write beats the style
+     attribute — so raising the alpha in the markup alone was not enough.
+     On the dark "next case" card the arrow was computing to the FALLBACK ink,
+     rgba(20,19,14,.55) over an rgb(20,19,14) card: exactly 1.00:1, i.e. perfectly
+     invisible. PROVEN by probe — the identical declaration on a sibling element in
+     the same subtree resolves to cream correctly, so the custom property is fine
+     and the stale inline value was the whole problem.
+     !important on `color` is the only thing that outranks it. It deliberately does
+     NOT touch `transform`, which those same handlers animate for the hover lift.
+     Resulting ratios: 3.97:1 light, 5.60:1 dark — both clear the 3:1 that 1.4.11
+     asks of a meaningful icon. */
+  [data-card-arrow], [data-mini-arrow] {
+    color: rgba(var(--inkrgb, 20,19,14), .55) !important;
+  }
+
+  /* WCAG 2.2 SC 2.4.11 Focus Appearance. Focus is already VISIBLE — the UA ring
+     shows (verified by real Tab-key focus: outline-style auto, :focus-visible
+     matching), so 2.4.7 passes. But that ring is 1px, under the 2px minimum
+     perimeter 2.4.11 asks for. The accent measures 6.96:1 on cream and 8.6:1 in
+     dark, so it is a safe indicator colour in both themes. */
+  :focus-visible {
+    outline: 2px solid var(--acc, #1B3BD8) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* prefers-reduced-motion. 20-33 elements per page animate on scroll, plus
+     marquee / spin / scan / bob loops. A "calm" path ALREADY EXISTS in the page
+     script — it zeroes --spin/--mq/--scan/--bob — but it is wired to a manual
+     design-tool prop that defaults to false, so the OS preference was ignored
+     entirely. This reuses those same variables and neutralises durations.
+
+     Sets DURATIONS ONLY, never transform or opacity. The scroll-reveal observer
+     unhides elements by writing those two properties inline; an !important here
+     would beat it and leave the page permanently blank (see trap #2). With a
+     near-zero transition duration the reveal still runs — it just lands instantly,
+     which is exactly what a reduced-motion user wants. */
+  @media (prefers-reduced-motion: reduce) {
+    :root, [data-theme-root] {
+      --spin: 0s !important;
+      --mq: 0s !important;
+      --scan: 0s !important;
+      --bob: 0s !important;
+    }
+    *, *::before, *::after {
+      animation-duration: .001s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001s !important;
+    }
+    html { scroll-behavior: auto !important; }
+  }
+
   /* mobile-menu.js appends the hamburger toggle to the header on every page. It is
      only meaningful in the phone tier, where the sticky bar collapses the nav, so
      hide it everywhere else. Declared here (outside any media query) so desktop is

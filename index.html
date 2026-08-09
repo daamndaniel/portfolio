@@ -30,6 +30,10 @@
 
 
 
+
+
+
+
   /* ===========================================================================
      RESPONSIVE FIXES — hand-added on top of a design-tool export
      ---------------------------------------------------------------------------
@@ -83,6 +87,102 @@
      unchanged (verified "632px 632px 0px" at 1425px, same as before). */
   [style*="minmax(340px, 1fr)"] {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+  }
+
+  /* ===== ACCESSIBILITY =======================================================
+     Findings from a measured audit (contrast ratios computed from composited
+     colours in BOTH themes, not eyeballed). What already passed, recorded so it
+     is not "fixed" later by mistake:
+       full-strength ink text          16.44:1
+       rgba(ink,.66) muted text         5.75:1 light / 7.63:1 dark  (AA, AAA dark)
+       accent #1B3BD8 as link on cream  6.96:1   (dark theme uses #7E97FF, 8.6:1)
+       nothing anywhere sets outline:none, so focus is not suppressed
+       spacing is ~92% on a 4pt grid — coherent, left alone
+     Note every selector below uses the NORMALISED colour form
+     (`rgba(20, 19, 14, 0.07)`): the source bytes read `rgba(20,19,14,.07)` and
+     match NOTHING in the DOM — see trap #1 at the top of this file. Verified
+     against the rendered DOM, 2 and 1 matches respectively. ==================== */
+
+  /* WCAG 1.4.3. The URL labels in the work-card mockups ("twilio.com/contact-sales",
+     "stackbuilders.com") measured 3.25:1 against the 4.5:1 required — 8px text at
+     rgba(ink,.5) on a 7% ink tint.
+
+     These are miniature browser-chrome mockups drawn INSIDE the card screenshots,
+     not site chrome, so they are deliberately theme-blind: their parent mockups are
+     rgb(239,237,231) (light) regardless of the site theme, and the third card's
+     mockup is dark (rgb(26,32,41)) with its own white-alpha pill that already
+     measures 4.91:1 and is left alone.
+
+     Two consequences for the fix, both learned the hard way:
+       - The colour must stay a LITERAL rgba, NOT var(--inkrgb). Making it
+         theme-aware turned the text cream on a light mockup in dark theme and made
+         the ratio WORSE — 1.15:1. Measured, not hypothetical.
+       - The 8px size stays. It is a scaled-down browser bar in a 16px-tall pill;
+         enlarging the type distorts the mockup it is imitating.
+     Raising the alpha alone to .75 takes it to ~6.4:1 in both themes. */
+  [style*="rgba(20, 19, 14, 0.07)"][style*="height: 16px"] {
+    color: rgba(20, 19, 14, .75) !important;
+  }
+
+  /* WCAG 1.4.3. The photo sticker sets cream text on a 55%-opacity dark pill over
+     a photograph — measured 4.38:1, just under. Because the backdrop is an image
+     the ratio is not fully controllable, so raise the pill alpha until the pill
+     itself dominates: at .78 it lands around 13:1 whatever the photo does. */
+  [style*="rgba(20, 19, 14, 0.55)"] {
+    background: rgba(20, 19, 14, .78) !important;
+  }
+
+  /* WCAG 1.4.11 Non-text Contrast. The card / mini-card "open case study" arrow
+     icons are also written by JS on mouseenter and mouseleave
+     (`arrow.style.color = …`, 18 sites), and an inline write beats the style
+     attribute — so raising the alpha in the markup alone was not enough.
+     On the dark "next case" card the arrow was computing to the FALLBACK ink,
+     rgba(20,19,14,.55) over an rgb(20,19,14) card: exactly 1.00:1, i.e. perfectly
+     invisible. PROVEN by probe — the identical declaration on a sibling element in
+     the same subtree resolves to cream correctly, so the custom property is fine
+     and the stale inline value was the whole problem.
+     !important on `color` is the only thing that outranks it. It deliberately does
+     NOT touch `transform`, which those same handlers animate for the hover lift.
+     Resulting ratios: 3.97:1 light, 5.60:1 dark — both clear the 3:1 that 1.4.11
+     asks of a meaningful icon. */
+  [data-card-arrow], [data-mini-arrow] {
+    color: rgba(var(--inkrgb, 20,19,14), .55) !important;
+  }
+
+  /* WCAG 2.2 SC 2.4.11 Focus Appearance. Focus is already VISIBLE — the UA ring
+     shows (verified by real Tab-key focus: outline-style auto, :focus-visible
+     matching), so 2.4.7 passes. But that ring is 1px, under the 2px minimum
+     perimeter 2.4.11 asks for. The accent measures 6.96:1 on cream and 8.6:1 in
+     dark, so it is a safe indicator colour in both themes. */
+  :focus-visible {
+    outline: 2px solid var(--acc, #1B3BD8) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* prefers-reduced-motion. 20-33 elements per page animate on scroll, plus
+     marquee / spin / scan / bob loops. A "calm" path ALREADY EXISTS in the page
+     script — it zeroes --spin/--mq/--scan/--bob — but it is wired to a manual
+     design-tool prop that defaults to false, so the OS preference was ignored
+     entirely. This reuses those same variables and neutralises durations.
+
+     Sets DURATIONS ONLY, never transform or opacity. The scroll-reveal observer
+     unhides elements by writing those two properties inline; an !important here
+     would beat it and leave the page permanently blank (see trap #2). With a
+     near-zero transition duration the reveal still runs — it just lands instantly,
+     which is exactly what a reduced-motion user wants. */
+  @media (prefers-reduced-motion: reduce) {
+    :root, [data-theme-root] {
+      --spin: 0s !important;
+      --mq: 0s !important;
+      --scan: 0s !important;
+      --bob: 0s !important;
+    }
+    *, *::before, *::after {
+      animation-duration: .001s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001s !important;
+    }
+    html { scroll-behavior: auto !important; }
   }
 
   /* mobile-menu.js appends the hamburger toggle to the header on every page. It is
@@ -354,7 +454,7 @@
             <h1 style="margin: 0; font-size: clamp(38px, 5.4vw, 64px); font-weight: 500; line-height: 1.04; letter-spacing: -.034em; text-wrap: pretty; max-width: 860px;">I'm Daniel, a UX/UI designer who turns complex ideas into <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; letter-spacing: -0.01em; color: var(--acc, #1B3BD8);">clear, human experiences.</span></h1>
             <p style="margin: 28px 0 0; max-width: 600px; font-size: clamp(17px, 1.9vw, 20px); line-height: 1.62; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">I'm happiest building them with good people. I bring curiosity, calm collaboration, and a constant drive to learn to every project.</p>
             <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 36px;">
-              <a href="#work" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border: 1px solid var(--ink, #14130E); border-radius: 999px; background: var(--ink, #14130E); color: var(--pg, #F2F1EC); font-size: 16px; font-weight: 500; transition: background .2s ease, color .2s ease;" style-hover="background: var(--acc, #1B3BD8); border-color: var(--acc, #1B3BD8); color: #FFF; opacity: 1;">View my work <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></a>
+              <a href="#work" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border: 1px solid var(--ink, #14130E); border-radius: 999px; background: var(--ink, #14130E); color: var(--pg, #F2F1EC); font-size: 16px; font-weight: 500; transition: background .2s ease, color .2s ease;" style-hover="background: var(--acc, #1B3BD8); border-color: var(--acc, #1B3BD8); color: var(--pg, #F2F1EC); opacity: 1;">View my work <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></a>
               <a href="https://www.linkedin.com/in/daniel-pazmi%C3%B1o-c-8a5550158/" target="_blank" rel="noopener" data-magnetic="" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.2); border-radius: 999px; font-size: 16px; font-weight: 500; transition: border-color .2s ease, color .2s ease;" style-hover="border-color: var(--ink, #14130E); opacity: 1;">Connect on LinkedIn <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></a>
             </div>
           </div>
@@ -385,7 +485,7 @@
         <a href="sales-landing-cro" data-case-card="" data-reveal="" style="display: flex; flex-wrap: wrap; gap: clamp(24px, 3vw, 40px); padding: 20px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 18px; opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease, opacity .9s cubic-bezier(.2,.7,.2,1);">
           <div style="box-sizing: border-box; flex: 999 1 460px; min-width: 0; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: linear-gradient(155deg, rgba(var(--accrgb, 27,59,216),.18), rgba(var(--accrgb, 27,59,216),.05) 55%, rgba(var(--inkrgb, 20,19,14),.08)); display: flex; align-items: flex-end; justify-content: center; padding: 12px 28px 0;"><div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,0) 68%);"></div><div data-card-cover="" style="position: relative; width: 100%; margin-bottom: -18px; border-radius: 10px 10px 0 0; overflow: hidden; background: #FFFFFF; box-shadow: 0 22px 46px rgba(20,19,14,.32); transition: transform .5s cubic-bezier(.2,.7,.2,1);"><div style="display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 12px; background: #EFEDE7; border-bottom: 1px solid rgba(20,19,14,.08);"><div style="display: flex; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #FF5F57;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #FEBC2E;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #28C840;"></span></div><div style="flex: 1; max-width: 230px; height: 16px; border-radius: 999px; background: rgba(20,19,14,.07); display: flex; align-items: center; padding: 0 8px; font: 400 8px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(20,19,14,.5);">twilio.com/contact-sales</div></div><div style="aspect-ratio: 16/9; overflow: hidden;"><img src="assets/cro-card.png" alt="Redesigned contact sales landing page" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div></div>
           <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; padding: 16px 16px 16px 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;"><span style="font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">01</span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;"><span style="font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">01</span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.55); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
             <h3 style="margin: 16px 0 0; font-size: clamp(22px, 2.6vw, 28px); font-weight: 500; line-height: 1.18; letter-spacing: -.024em; text-wrap: pretty;">Turning high-intent traffic into completed sales conversations</h3>
             <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">A CRO-focused redesign that made the path to sign-up clearer, easier, and more confidence-building.</p>
             <div style="display: flex; gap: 8px; margin-top: 16px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);"><span>UX Research</span><span>·</span><span>UI Design</span><span>·</span><span>CRO</span></div>
@@ -396,14 +496,14 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 20px; margin-top: 20px;">
           <a href="stack-builders-website" data-case-card="" data-reveal="" data-reveal-delay="90" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 18px; opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease, opacity .9s cubic-bezier(.2,.7,.2,1);">
             <div style="box-sizing: border-box; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: linear-gradient(200deg, rgba(var(--accrgb, 27,59,216),.14), rgba(var(--inkrgb, 20,19,14),.08)); display: flex; align-items: flex-end; justify-content: center; padding: 12px 28px 0;"><div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,0) 68%);"></div><div data-card-cover="" style="position: relative; width: 100%; margin-bottom: -18px; border-radius: 10px 10px 0 0; overflow: hidden; background: #FFFFFF; box-shadow: 0 22px 46px rgba(20,19,14,.32); transition: transform .5s cubic-bezier(.2,.7,.2,1);"><div style="display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 12px; background: #EFEDE7; border-bottom: 1px solid rgba(20,19,14,.08);"><div style="display: flex; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #FF5F57;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #FEBC2E;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #28C840;"></span></div><div style="flex: 1; max-width: 230px; height: 16px; border-radius: 999px; background: rgba(20,19,14,.07); display: flex; align-items: center; padding: 0 8px; font: 400 8px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(20,19,14,.5);">stackbuilders.com</div></div><div style="aspect-ratio: 16/9; overflow: hidden;"><img src="assets/sb-card.png" alt="Redesigned Stack Builders homepage" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div></div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px;"><span style="display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">02<span style="padding: 4px 12px; border-radius: 999px; background: rgba(var(--accrgb, 27,59,216),.1); font: 400 10px/1 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--acc, #1B3BD8);">In implementation</span></span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px;"><span style="display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">02<span style="padding: 4px 12px; border-radius: 999px; background: rgba(var(--accrgb, 27,59,216),.1); font: 400 10px/1 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--acc, #1B3BD8);">In implementation</span></span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.55); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
             <h3 style="margin: 16px 0 0; font-size: clamp(20px, 2.4vw, 24px); font-weight: 500; line-height: 1.2; letter-spacing: -.022em; text-wrap: pretty;">Turning Stack Builders' website into a stronger first conversation</h3>
             <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">An end-to-end redesign that clarifies the company's value and its path to engagement.</p>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: auto; padding-top: 24px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);"><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+73%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Traffic</div></div><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+200%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Conversion</div></div><div><div style="font-size: 20px; font-weight: 500; letter-spacing: -.02em;">+28%</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Engagement</div></div></div>
           </a>
           <a href="judged-sports-platform" data-case-card="" data-reveal="" data-reveal-delay="180" style="display: flex; flex-direction: column; padding: 20px; border: 1px solid rgba(var(--inkrgb, 20,19,14),.14); border-radius: 18px; opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition: transform .35s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .35s ease, opacity .9s cubic-bezier(.2,.7,.2,1);">
             <div style="box-sizing: border-box; position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: linear-gradient(165deg, #101620, #1C2331); display: flex; align-items: flex-end; justify-content: center; padding: 12px 28px 0;"><div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.18), rgba(255,255,255,0) 68%);"></div><div data-card-cover="" style="position: relative; width: 100%; margin-bottom: -18px; border-radius: 10px 10px 0 0; overflow: hidden; background: #0F1319; box-shadow: 0 22px 46px rgba(20,19,14,.32); transition: transform .5s cubic-bezier(.2,.7,.2,1);"><div style="display: flex; align-items: center; gap: 12px; height: 30px; padding: 0 12px; background: #1A2029; border-bottom: 1px solid rgba(255,255,255,.08);"><div style="display: flex; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 999px; background: #FF5F57;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #FEBC2E;"></span><span style="width: 8px; height: 8px; border-radius: 999px; background: #28C840;"></span></div><div style="flex: 1; max-width: 230px; height: 16px; border-radius: 999px; background: rgba(255,255,255,.1); display: flex; align-items: center; padding: 0 8px; font: 400 8px/1 'DM Mono', monospace; letter-spacing: .06em; color: rgba(255,255,255,.55);">xgrab.app</div></div><div style="aspect-ratio: 16/9; overflow: hidden;"><img src="assets/xg-card.png" alt="XGrab judged sports platform landing page" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block;"></div></div></div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px;"><span style="display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">03<span style="padding: 4px 12px; border-radius: 999px; background: rgba(var(--accrgb, 27,59,216),.1); font: 400 10px/1 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--acc, #1B3BD8);">In progress</span></span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.35); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px;"><span style="display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1 'DM Mono', monospace; color: rgba(var(--inkrgb, 20,19,14),.66);">03<span style="padding: 4px 12px; border-radius: 999px; background: rgba(var(--accrgb, 27,59,216),.1); font: 400 10px/1 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--acc, #1B3BD8);">In progress</span></span><span data-card-arrow="" style="display: inline-flex; color: rgba(var(--inkrgb, 20,19,14),.55); transition: transform .3s cubic-bezier(.2,.7,.2,1), color .3s ease;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true" style="display: block; flex: 0 0 auto; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></span></div>
             <h3 style="margin: 16px 0 0; font-size: clamp(20px, 2.4vw, 24px); font-weight: 500; line-height: 1.2; letter-spacing: -.022em; text-wrap: pretty;">Building the foundation for a new era of judged sports</h3>
             <p style="margin: 12px 0 0; font-size: 16px; line-height: 1.55; color: rgba(var(--inkrgb, 20,19,14),.66); text-wrap: pretty;">A 0-to-1 AI platform for moguls, aerials, and water ramps: brand, product, and design system.</p>
             <div style="display: flex; gap: 24px; margin-top: auto; padding-top: 24px; border-top: 1px solid rgba(var(--inkrgb, 20,19,14),.14);"><div><div style="font-size: 16px; font-weight: 500; letter-spacing: -.01em;">Early-stage platform</div><div style="margin-top: 4px; font: 400 10px/1.4 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: rgba(var(--inkrgb, 20,19,14),.66);">Investor interest</div></div></div>
@@ -415,7 +515,7 @@
         <div data-reveal="" style="opacity: 0; transform: translateY(20px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); background: var(--ink, #14130E); color: var(--pg, #F2F1EC); border-radius: 22px; padding: clamp(32px, 5vw, 64px) clamp(24px, 4.5vw, 56px);">
           <div style="display: flex; flex-wrap: wrap; gap: clamp(28px, 4.5vw, 64px); align-items: start;">
             <div style="flex: 1 1 300px; min-width: 0;">
-              <div style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: rgba(var(--pgrgb, 242,241,236),.5);">How I work</div>
+              <div style="font: 400 12px/1 'DM Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: rgba(var(--pgrgb, 242,241,236),.66);">How I work</div>
               <h2 style="margin: 20px 0 0; font-size: clamp(28px, 3.6vw, 40px); font-weight: 500; line-height: 1.07; letter-spacing: -.03em; text-wrap: pretty;">Serious about the work. <span style="font-family: var(--accent-face, 'Caveat', cursive); font-style: var(--accent-style, normal); font-size: var(--accent-size, 1em); line-height: var(--accent-lh, 1); font-weight: 400; color: var(--accband, #9FB0FF);">Easy to work with.</span></h2>
             </div>
             <div style="flex: 999 1 380px; min-width: 0;">
@@ -788,7 +888,7 @@ class Component extends DCLogic {
         card.style.borderColor = 'rgba(var(--inkrgb, 20,19,14),.14)';
         card.style.boxShadow = 'none';
         covers.forEach(c => { c.style.transform = c.getAttribute('data-rest-t') || 'none'; });
-        if (arrow) { arrow.style.transform = 'none'; arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.35)'; }
+        if (arrow) { arrow.style.transform = 'none'; arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.55)'; }
       });
     });
   }
