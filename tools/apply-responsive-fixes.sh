@@ -20,14 +20,17 @@ cd "$(dirname "$0")/.."
 
 CSS="tools/responsive-fixes.css"
 JS="tools/mobile-menu.js"
+JS2="tools/i18n-title.js"
 PAGES=(index.html about.html sales-landing-cro.html stack-builders-website.html judged-sports-platform.html)
 MARKER="RESPONSIVE FIXES"
 JS_MARKER="data-mobile-menu"
+JS2_MARKER="data-i18n-title"
 CHECK_ONLY=0
 [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
 [ -f "$CSS" ] || { echo "FAIL: $CSS is missing"; exit 1; }
 [ -f "$JS"  ] || { echo "FAIL: $JS is missing";  exit 1; }
+[ -f "$JS2" ] || { echo "FAIL: $JS2 is missing"; exit 1; }
 
 # ---------------------------------------------------------------------------
 # TOKEN FIXES — contrast failures that cannot be fixed from the stylesheet.
@@ -92,12 +95,13 @@ for f in "${PAGES[@]}"; do
   if grep -q "$MARKER" "$f"; then echo "  ok       $f (already patched)"; already=$((already+1)); continue; fi
   if [ $CHECK_ONLY -eq 1 ]; then echo "  NEEDS    $f"; continue; fi
   token_fixes "$f"
-  python3 - "$f" "$CSS" "$JS" <<'PY'
+  python3 - "$f" "$CSS" "$JS" "$JS2" <<'PY'
 import sys
-page, cssfile, jsfile = sys.argv[1], sys.argv[2], sys.argv[3]
+page, cssfile, jsfile, js2file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 html = open(page, encoding='utf-8').read()
 css  = open(cssfile, encoding='utf-8').read()
 js   = open(jsfile,  encoding='utf-8').read()
+js2  = open(js2file, encoding='utf-8').read()
 
 # 1. CSS -> immediately before the closing </style> of the FIRST <style> block
 #    inside <helmet>. support.js preserves <style> there and hoists it to <head>.
@@ -114,7 +118,8 @@ html = html[:e] + '\n' + css + html[e:]
 #    asynchronously, so load order is not load-bearing.
 b = html.rfind('</body>')
 if b < 0: sys.exit(f'FAIL: no </body> in {page}')
-html = html[:b] + '<script data-mobile-menu>\n' + js + '</script>\n' + html[b:]
+html = html[:b] + '<script data-mobile-menu>\n' + js + '</script>\n' \
+            + '<script data-i18n-title>\n' + js2 + '</script>\n' + html[b:]
 
 open(page, 'w', encoding='utf-8').write(html)
 PY
@@ -132,6 +137,7 @@ for f in "${PAGES[@]}"; do
   [ -f "$f" ] || continue
   assert "css in $f" "$(grep -c "$MARKER" "$f" | tr -d ' ')" 1
   assert "js  in $f" "$(grep -c "$JS_MARKER" "$f" | tr -d ' ')" 1
+  assert "i18n in $f" "$(grep -c "$JS2_MARKER" "$f" | tr -d ' ')" 1
 done
 # the CTA must stay in the sticky bar, never in the collapsed panel
 assert "CTA excluded from panel" \
