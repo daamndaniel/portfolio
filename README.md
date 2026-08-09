@@ -38,14 +38,19 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 | `tools/mobile-menu.js` | Sticky header + hamburger nav (mobile only). |
 | `tools/i18n-title.js` | Keeps `<title>` and `<html lang>` in step with the language toggle. |
 | `tools/a11y-controls.js` | Keyboard support + ARIA state for the slider and the four toggles. |
-| `tools/apply-responsive-fixes.sh` | Injects all four, plus byte-level contrast fixes. |
+| `tools/optimize-assets.sh` | Right-sizes and re-encodes `assets/`. Run BEFORE the next one. |
+| `tools/apply-responsive-fixes.sh` | Injects all four, plus byte-level contrast and asset-path fixes. |
 
 **Re-exporting from the design tool regenerates the five HTML files and deletes every one
 of these changes.** Put them back with:
 
 ```bash
-bash tools/apply-responsive-fixes.sh
+bash tools/optimize-assets.sh        # assets: 22MB -> 9.1MB
+bash tools/apply-responsive-fixes.sh   # CSS/JS + point the HTML at the .jpg files
 ```
+
+The asset-path rewrite is conditional on the `.jpg` existing, so running only the
+second script after a re-export leaves references on `.png` — heavy, but not broken.
 
 It is idempotent, asserts 49 invariants about its own result, and takes `--check` to verify
 without writing. Nothing runs at deploy time — it is a one-shot script you run by hand, so
@@ -104,8 +109,15 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
   every load. If unpkg is slow, blocked by a corporate network, or blocked by an ad
   blocker, the visitor gets a blank cream page rather than degraded content. Vendoring the
   three scripts locally would remove the single point of failure without adding a build step.
-- **Asset weight.** `assets/` is ~22MB; `sb-cover.png` alone is 4.5MB, `xg-cover.png` 2.9MB.
-  Lossless compression would cut first-load time substantially and is not a build pipeline.
+- **Three discipline stills are below retina density in the source.** `xg-moguls`,
+  `xg-aerials` and `xg-water-ramps` are 560px wide but display at 416px — only 1.35x,
+  where 2x is wanted. They arrived that size in the handoff, so this needs new source
+  images rather than re-encoding.
+- **`sb-cover.png` (3.3MB) and `sb-card.png` (1.6MB) are still the two heaviest files.**
+  They genuinely use their alpha channel (828,677 and 418,049 non-opaque pixels), so
+  they cannot become JPEG, and the page has both a light and a dark theme behind them
+  so they cannot be flattened onto a colour either. A tool that can quantise PNG with
+  alpha (`pngquant`, `oxipng`) would shrink them further; only `sips` is available here.
 - **The old capitalised `/Portfolio/` URL is permanently dead.** GitHub creates no Pages
   redirect for a renamed repo, and Pages has no rewrite config. Only a custom domain would
   let you reclaim it.

@@ -87,6 +87,18 @@ a="arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.35)'"
 b="arrow.style.color = 'rgba(var(--inkrgb, 20,19,14),.55)'"
 n+=s.count(a); s=s.replace(a,b)
 
+# 4. Asset references -> the optimised .jpg, but ONLY where that file actually
+#    exists on disk. tools/optimize-assets.sh converts the 24 fully-opaque PNGs to
+#    JPEG (the 3 that use real alpha stay PNG). Making the rewrite conditional means
+#    a fresh export whose assets are still PNG keeps working — heavy, but never
+#    broken — instead of pointing at files nobody generated yet.
+import os, re as _re
+for stem in sorted(set(_re.findall(r'assets/([A-Za-z0-9._-]+)\.png', s))):
+    if os.path.exists(os.path.join('assets', stem + '.jpg')):
+        old_ref = 'assets/' + stem + '.png'
+        n += s.count(old_ref)
+        s = s.replace(old_ref, 'assets/' + stem + '.jpg')
+
 open(p,'w',encoding='utf-8').write(s)
 print(f'    token fixes applied: {n}')
 PY
