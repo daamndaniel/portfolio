@@ -173,6 +173,42 @@
     html { scroll-behavior: auto !important; }
   }
 
+  /* WCAG 1.4.1 Use of Color. All four toggle groups signalled the selected item by
+     colour alone. Measured separation between selected and unselected was 1.22:1 in
+     light and 1.10:1 in dark — two near-equiluminant hues, so to anyone with a
+     colour-vision deficiency the groups read as having nothing selected at all.
+     tools/a11y-controls.js mirrors the page's own state onto aria-pressed /
+     aria-current; these rules give each of them a cue that does not depend on hue.
+
+     Note the !important on the tab rule and its absence on the others: show() writes
+     `b.style.boxShadow = 'none'` inline on every tab button, so that one has to
+     outrank an inline style. The rail only has the global `a { text-decoration:
+     none }` to beat, which an attribute selector already outranks on specificity. */
+  [data-tab-btn][aria-pressed="true"] {
+    box-shadow: inset 3px 0 0 var(--acc, #1B3BD8) !important;
+  }
+  [data-chapter-link][aria-current="true"] {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+  }
+  /* A pseudo-element, deliberately: applyLang() walks TEXT nodes, so generated
+     content is invisible to it and cannot break the translation lookup — which
+     matches on exact strings and would miss "English ✓". */
+  [data-lang-btn][aria-pressed="true"]::after,
+  [data-theme-btn][aria-pressed="true"]::after {
+    content: ' ✓';
+    font-weight: 600;
+  }
+
+  /* WCAG 2.4.7 for the slider, which a11y-controls.js just made focusable. A wider
+     ring than the global 2px because the widget is a large image region and a thin
+     line on photography is easy to lose. */
+  [data-compare]:focus-visible {
+    outline: 3px solid var(--acc, #1B3BD8) !important;
+    outline-offset: 3px !important;
+  }
+
   /* mobile-menu.js appends the hamburger toggle to the header on every page. It is
      only meaningful in the phone tier, where the sticky bar collapses the nav, so
      hide it everywhere else. Declared here (outside any media query) so desktop is

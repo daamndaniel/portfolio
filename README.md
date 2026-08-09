@@ -37,7 +37,8 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 | `tools/responsive-fixes.css` | Responsive **and** accessibility CSS. **Single source of truth.** |
 | `tools/mobile-menu.js` | Sticky header + hamburger nav (mobile only). |
 | `tools/i18n-title.js` | Keeps `<title>` and `<html lang>` in step with the language toggle. |
-| `tools/apply-responsive-fixes.sh` | Injects all three, plus byte-level contrast fixes. |
+| `tools/a11y-controls.js` | Keyboard support + ARIA state for the slider and the four toggles. |
+| `tools/apply-responsive-fixes.sh` | Injects all four, plus byte-level contrast fixes. |
 
 **Re-exporting from the design tool regenerates the five HTML files and deletes every one
 of these changes.** Put them back with:
@@ -46,7 +47,7 @@ of these changes.** Put them back with:
 bash tools/apply-responsive-fixes.sh
 ```
 
-It is idempotent, asserts 42 invariants about its own result, and takes `--check` to verify
+It is idempotent, asserts 49 invariants about its own result, and takes `--check` to verify
 without writing. Nothing runs at deploy time — it is a one-shot script you run by hand, so
 it does not make this a build pipeline.
 
@@ -57,6 +58,12 @@ eyeballed) fixed five contrast failures — the worst was a card arrow icon at e
 i.e. invisible — raised the focus ring to 2px for WCAG 2.2 SC 2.4.11, wired
 `prefers-reduced-motion` to the `calm` path the page script already had, and fixed
 SC 3.1.1 by making `<html lang>` follow the language toggle.
+
+A second round fixed the hover state (`a:hover { opacity: .72 }` multiplied into
+link alpha, dropping ~37 anchors to 3.16:1), made the before/after slider keyboard
+operable with `role="slider"` and arrow keys (SC 2.1.1 / 4.1.2), and gave all four
+toggle groups real ARIA state plus a cue that is not colour — they previously
+signalled selection by hue alone at 1.22:1 separation (SC 1.4.1).
 
 Passing already, recorded so nobody "fixes" them later: ink text 16.44:1, `rgba(ink,.66)`
 5.75:1 light / 7.63:1 dark, accent link 6.96:1, all `clamp()` font minimums ≥16px, nothing

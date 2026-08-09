@@ -21,16 +21,19 @@ cd "$(dirname "$0")/.."
 CSS="tools/responsive-fixes.css"
 JS="tools/mobile-menu.js"
 JS2="tools/i18n-title.js"
+JS3="tools/a11y-controls.js"
 PAGES=(index.html about.html sales-landing-cro.html stack-builders-website.html judged-sports-platform.html)
 MARKER="RESPONSIVE FIXES"
 JS_MARKER="data-mobile-menu"
 JS2_MARKER="data-i18n-title"
+JS3_MARKER="data-a11y-controls"
 CHECK_ONLY=0
 [ "${1:-}" = "--check" ] && CHECK_ONLY=1
 
 [ -f "$CSS" ] || { echo "FAIL: $CSS is missing"; exit 1; }
 [ -f "$JS"  ] || { echo "FAIL: $JS is missing";  exit 1; }
 [ -f "$JS2" ] || { echo "FAIL: $JS2 is missing"; exit 1; }
+[ -f "$JS3" ] || { echo "FAIL: $JS3 is missing"; exit 1; }
 
 # ---------------------------------------------------------------------------
 # TOKEN FIXES — contrast failures that cannot be fixed from the stylesheet.
@@ -95,13 +98,14 @@ for f in "${PAGES[@]}"; do
   if grep -q "$MARKER" "$f"; then echo "  ok       $f (already patched)"; already=$((already+1)); continue; fi
   if [ $CHECK_ONLY -eq 1 ]; then echo "  NEEDS    $f"; continue; fi
   token_fixes "$f"
-  python3 - "$f" "$CSS" "$JS" "$JS2" <<'PY'
+  python3 - "$f" "$CSS" "$JS" "$JS2" "$JS3" <<'PY'
 import sys
-page, cssfile, jsfile, js2file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+page, cssfile, jsfile, js2file, js3file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 html = open(page, encoding='utf-8').read()
 css  = open(cssfile, encoding='utf-8').read()
 js   = open(jsfile,  encoding='utf-8').read()
 js2  = open(js2file, encoding='utf-8').read()
+js3  = open(js3file, encoding='utf-8').read()
 
 # 1. CSS -> immediately before the closing </style> of the FIRST <style> block
 #    inside <helmet>. support.js preserves <style> there and hoists it to <head>.
@@ -119,7 +123,8 @@ html = html[:e] + '\n' + css + html[e:]
 b = html.rfind('</body>')
 if b < 0: sys.exit(f'FAIL: no </body> in {page}')
 html = html[:b] + '<script data-mobile-menu>\n' + js + '</script>\n' \
-            + '<script data-i18n-title>\n' + js2 + '</script>\n' + html[b:]
+            + '<script data-i18n-title>\n' + js2 + '</script>\n' \
+            + '<script data-a11y-controls>\n' + js3 + '</script>\n' + html[b:]
 
 open(page, 'w', encoding='utf-8').write(html)
 PY
@@ -138,6 +143,7 @@ for f in "${PAGES[@]}"; do
   assert "css in $f" "$(grep -c "$MARKER" "$f" | tr -d ' ')" 1
   assert "js  in $f" "$(grep -c "$JS_MARKER" "$f" | tr -d ' ')" 1
   assert "i18n in $f" "$(grep -c "$JS2_MARKER" "$f" | tr -d ' ')" 1
+  assert "a11y in $f" "$(grep -c "$JS3_MARKER" "$f" | tr -d ' ')" 1
 done
 # the CTA must stay in the sticky bar, never in the collapsed panel
 assert "CTA excluded from panel" \
@@ -153,8 +159,14 @@ for f in "${PAGES[@]}"; do
   assert "no .35 icon in $f"    "$(grep -c 'color: rgba(var(--inkrgb, 20,19,14),.35)' "$f" | tr -d ' ')" 0
 done
 # a11y: focus indicator and reduced-motion support must survive future edits
+# matches the GLOBAL 2px ring by its own declaration, so adding another
+# :focus-visible rule (e.g. the 3px one on the compare slider) cannot fail this
 assert "focus-visible indicator present" \
-  "$(grep -cF ':focus-visible {' "$CSS" | tr -d ' ')" 1
+  "$(grep -cF 'outline: 2px solid var(--acc, #1B3BD8) !important;' "$CSS" | tr -d ' ')" 1
+assert "slider focus ring present" \
+  "$(grep -cF '[data-compare]:focus-visible {' "$CSS" | tr -d ' ')" 1
+assert "colour-independent selection cues" \
+  "$(grep -cE '\[(data-tab-btn|data-chapter-link)\]\[aria-(pressed|current)' "$CSS" | tr -d ' ')" 2
 assert "prefers-reduced-motion block present" \
   "$(grep -cF '@media (prefers-reduced-motion: reduce)' "$CSS" | tr -d ' ')" 1
 # the mockup URL labels must stay theme-BLIND: a var()-based colour measured 1.15:1
