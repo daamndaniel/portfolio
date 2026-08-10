@@ -38,6 +38,7 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 | `tools/mobile-menu.js` | Sticky header + hamburger nav (mobile only). |
 | `tools/i18n-title.js` | Keeps `<title>` and `<html lang>` in step with the language toggle. |
 | `tools/a11y-controls.js` | Keyboard support + ARIA state for the slider and the four toggles. |
+| `tools/drop-sections.py` | Re-applies owner-removed sections. Called by the script below. |
 | `tools/optimize-assets.sh` | Right-sizes and re-encodes `assets/`. Run BEFORE the next one. |
 | `tools/apply-responsive-fixes.sh` | Injects all four, plus byte-level contrast and asset-path fixes. |
 
@@ -45,14 +46,14 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 of these changes.** Put them back with:
 
 ```bash
-bash tools/optimize-assets.sh        # assets: 22MB -> 9.1MB
+bash tools/optimize-assets.sh        # assets: 22MB -> 9.0MB
 bash tools/apply-responsive-fixes.sh   # CSS/JS + point the HTML at the .jpg files
 ```
 
 The asset-path rewrite is conditional on the `.jpg` existing, so running only the
 second script after a re-export leaves references on `.png` — heavy, but not broken.
 
-It is idempotent, asserts 49 invariants about its own result, and takes `--check` to verify
+It is idempotent, asserts 50 invariants about its own result, and takes `--check` to verify
 without writing. Nothing runs at deploy time — it is a one-shot script you run by hand, so
 it does not make this a build pipeline.
 
@@ -109,10 +110,13 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
   every load. If unpkg is slow, blocked by a corporate network, or blocked by an ad
   blocker, the visitor gets a blank cream page rather than degraded content. Vendoring the
   three scripts locally would remove the single point of failure without adding a build step.
-- **Three discipline stills are below retina density in the source.** `xg-moguls`,
-  `xg-aerials` and `xg-water-ramps` are 560px wide but display at 416px — only 1.35x,
-  where 2x is wanted. They arrived that size in the handoff, so this needs new source
-  images rather than re-encoding.
+- **The XGrab discipline cards are deliberately removed.** The Moguls / Aerials /
+  Water-ramps section was cut at the owner's request; its three stills are deleted too.
+  `tools/drop-sections.py` re-applies the removal after a re-export, since the design
+  tool will regenerate the page complete with it. Three now-orphaned entries remain in
+  that page's translation dictionary ("Moguls", "Aerials", "Water ramps") — inert, since
+  they can no longer match any text node, and left alone rather than risk a syntax error
+  editing the JS object literal.
 - **`sb-cover.png` (3.3MB) and `sb-card.png` (1.6MB) are still the two heaviest files.**
   They genuinely use their alpha channel (828,677 and 418,049 non-opaque pixels), so
   they cannot become JPEG, and the page has both a light and a dark theme behind them

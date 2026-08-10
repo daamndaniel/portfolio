@@ -22,6 +22,7 @@ CSS="tools/responsive-fixes.css"
 JS="tools/mobile-menu.js"
 JS2="tools/i18n-title.js"
 JS3="tools/a11y-controls.js"
+DROP="tools/drop-sections.py"
 PAGES=(index.html about.html sales-landing-cro.html stack-builders-website.html judged-sports-platform.html)
 MARKER="RESPONSIVE FIXES"
 JS_MARKER="data-mobile-menu"
@@ -34,6 +35,7 @@ CHECK_ONLY=0
 [ -f "$JS"  ] || { echo "FAIL: $JS is missing";  exit 1; }
 [ -f "$JS2" ] || { echo "FAIL: $JS2 is missing"; exit 1; }
 [ -f "$JS3" ] || { echo "FAIL: $JS3 is missing"; exit 1; }
+[ -f "$DROP" ] || { echo "FAIL: $DROP is missing"; exit 1; }
 
 # ---------------------------------------------------------------------------
 # TOKEN FIXES — contrast failures that cannot be fixed from the stylesheet.
@@ -109,6 +111,7 @@ for f in "${PAGES[@]}"; do
   if [ ! -f "$f" ]; then echo "  MISSING  $f"; missing=$((missing+1)); continue; fi
   if grep -q "$MARKER" "$f"; then echo "  ok       $f (already patched)"; already=$((already+1)); continue; fi
   if [ $CHECK_ONLY -eq 1 ]; then echo "  NEEDS    $f"; continue; fi
+  python3 "$DROP" "$f"
   token_fixes "$f"
   python3 - "$f" "$CSS" "$JS" "$JS2" "$JS3" <<'PY'
 import sys
@@ -170,6 +173,9 @@ for f in "${PAGES[@]}"; do
   assert "no bare #FFF in $f"   "$(grep -c 'color: #FFF;' "$f" | tr -d ' ')" 0
   assert "no .35 icon in $f"    "$(grep -c 'color: rgba(var(--inkrgb, 20,19,14),.35)' "$f" | tr -d ' ')" 0
 done
+# owner-removed content must stay removed after a re-export
+assert "discipline section removed" \
+  "$(grep -c 'data-disc' judged-sports-platform.html | tr -d ' ')" 0
 # a11y: focus indicator and reduced-motion support must survive future edits
 # matches the GLOBAL 2px ring by its own declaration, so adding another
 # :focus-visible rule (e.g. the 3px one on the compare slider) cannot fail this
