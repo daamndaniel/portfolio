@@ -6,7 +6,7 @@ Daniel Pazmiño's portfolio site — live at **[daamndaniel.github.io/portfolio]
 
 A static site, no build step and no framework. Plain HTML files plus one runtime script
 (`support.js`) that compiles the inline JSX templates in-browser (via Babel + React, loaded
-from unpkg at runtime), images in `assets/`, and the CV in `uploads/`.
+from `vendor/`, not a CDN), images in `assets/`, and the CV in `uploads/`.
 
 Published from the `main` branch, root, via GitHub Pages.
 
@@ -39,6 +39,7 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 | `tools/i18n-title.js` | Keeps `<title>` and `<html lang>` in step with the language toggle. |
 | `tools/a11y-controls.js` | Keyboard support + ARIA state for the slider and the four toggles. |
 | `tools/drop-sections.py` | Re-applies owner-removed sections. Called by the script below. |
+| `tools/png-min-alpha.py` | Reports a PNG's minimum alpha, so real transparency is preserved. |
 | `tools/optimize-assets.sh` | Right-sizes and re-encodes `assets/`. Run BEFORE the next one. |
 | `tools/apply-responsive-fixes.sh` | Injects all four, plus byte-level contrast and asset-path fixes. |
 
@@ -46,7 +47,7 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 of these changes.** Put them back with:
 
 ```bash
-bash tools/optimize-assets.sh        # assets: 22MB -> 9.0MB
+bash tools/optimize-assets.sh        # assets: 22MB -> 4.7MB
 bash tools/apply-responsive-fixes.sh   # CSS/JS + point the HTML at the .jpg files
 ```
 
@@ -57,7 +58,7 @@ The apply script also carries two **content** edits, because a re-export regener
 pages without them: the XGrab discipline section stays removed, and "Claude" stays in the
 About page's tool chips. Both are idempotent.
 
-It is idempotent, asserts 50 invariants about its own result, and takes `--check` to verify
+It is idempotent, asserts 52 invariants about its own result, and takes `--check` to verify
 without writing. Nothing runs at deploy time — it is a one-shot script you run by hand, so
 it does not make this a build pipeline.
 
@@ -101,8 +102,9 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
   `sales-landing-cro`, …). On GitHub Pages a directory outranks the implicit `.html`
   append, which silently turns that clean URL into a 301 to a 404.
 - **No bundler, framework, or build pipeline.** These files run directly in the browser.
-- `support.js` pulls React from unpkg at runtime, so the site needs internet access on
-  first load — that's expected, not a bug.
+- **Do not point `support.js` back at a CDN.** It loads React, ReactDOM and Babel from
+  `vendor/`, and the SRI hashes it pins are byte-verified against those files. If you
+  replace them, the `integrity` check will BLOCK the script and the site will go blank.
 - Filenames in `assets/` and the `.dc.html` legacy stubs matter — don't rename or move them.
 - The language/theme toggles are `1fr 1fr` grids with `gap: 2px`. Ten of the eleven
   `1fr 1fr` grids in the site are those toggles, so never write a blanket "collapse all
@@ -110,10 +112,9 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
 
 ## Known gaps
 
-- **Runtime CDN dependency.** `support.js` fetches React, ReactDOM and Babel from unpkg on
-  every load. If unpkg is slow, blocked by a corporate network, or blocked by an ad
-  blocker, the visitor gets a blank cream page rather than degraded content. Vendoring the
-  three scripts locally would remove the single point of failure without adding a build step.
+- **Nothing outstanding on assets or the runtime.** Both former gaps are closed: the
+  runtime is vendored in `vendor/` (no third-party origin), and `assets/` is 4.7MB, down
+  from 22MB.
 - **The XGrab discipline cards are deliberately removed.** The Moguls / Aerials /
   Water-ramps section was cut at the owner's request; its three stills are deleted too.
   `tools/drop-sections.py` re-applies the removal after a re-export, since the design
@@ -121,11 +122,11 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
   that page's translation dictionary ("Moguls", "Aerials", "Water ramps") — inert, since
   they can no longer match any text node, and left alone rather than risk a syntax error
   editing the JS object literal.
-- **`sb-cover.png` (3.3MB) and `sb-card.png` (1.6MB) are still the two heaviest files.**
-  They genuinely use their alpha channel (828,677 and 418,049 non-opaque pixels), so
-  they cannot become JPEG, and the page has both a light and a dark theme behind them
-  so they cannot be flattened onto a colour either. A tool that can quantise PNG with
-  alpha (`pngquant`, `oxipng`) would shrink them further; only `sips` is available here.
+- **`assets/` no longer contains any PNG.** All 25 files are JPEG. Three were previously
+  held back as PNG on the belief they used transparency — they did not: their minimum
+  alpha was 254, a 0.4% deviation invisible to the eye and an artefact of the export.
+  Converting them saved a further 4.2MB. `tools/png-min-alpha.py` now performs that check
+  by alpha VALUE, so a genuinely transparent asset in a future export is still protected.
 - **The old capitalised `/Portfolio/` URL is permanently dead.** GitHub creates no Pages
   redirect for a renamed repo, and Pages has no rewrite config. Only a custom domain would
   let you reclaim it.

@@ -118,6 +118,51 @@ print(f'    token fixes applied: {n}')
 PY
 }
 
+# ---------------------------------------------------------------------------
+# VENDOR THE RUNTIME — remove the third-party single point of failure.
+#
+# support.js loads React, ReactDOM and Babel from unpkg.com at runtime. If unpkg is
+# slow, blocked by a corporate network, or blocked by an ad blocker, the visitor gets
+# a blank cream page rather than degraded content — the whole site depended on TWO
+# origins staying up. vendor/ holds the same three files, so it now depends on one.
+#
+# This does NOT change page weight: the browser downloads the same ~3.1MB either
+# way. It changes the origin, removes a DNS+TLS handshake, and (since cross-site
+# HTTP cache partitioning landed) gives up nothing in shared-cache benefit.
+#
+# The three files are byte-verified against the SRI hashes support.js already pins,
+# so the `integrity` attribute keeps validating after the swap. If a future download
+# does not match, the browser BLOCKS the script and the site goes blank — hence the
+# verification step below rather than blind trust.
+#
+# Rewritten here rather than edited into support.js by hand, so the file stays
+# pristine and a re-export can be re-patched in one command.
+# ---------------------------------------------------------------------------
+vendor_runtime() {
+  [ -f support.js ] || return 0
+  local miss=0
+  for v in react.production.min.js react-dom.production.min.js babel.min.js; do
+    [ -f "vendor/$v" ] || { echo "  vendor/$v missing — leaving support.js on unpkg"; miss=1; }
+  done
+  [ "$miss" = "1" ] && return 0
+  python3 - <<'PYV'
+import re
+s=open('support.js',encoding='utf-8').read()
+subs = {
+  'https://unpkg.com/react@18.3.1/umd/react.production.min.js': 'vendor/react.production.min.js',
+  'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js': 'vendor/react-dom.production.min.js',
+  'https://unpkg.com/@babel/standalone@7.29.0/babel.min.js': 'vendor/babel.min.js',
+}
+n=0
+for a,b in subs.items():
+    n += s.count(a); s = s.replace(a,b)
+if n: open('support.js','w',encoding='utf-8').write(s)
+print(f'    vendored runtime URLs rewritten: {n}')
+PYV
+}
+
+vendor_runtime
+
 applied=0; already=0; missing=0
 for f in "${PAGES[@]}"; do
   if [ ! -f "$f" ]; then echo "  MISSING  $f"; missing=$((missing+1)); continue; fi
@@ -185,6 +230,10 @@ for f in "${PAGES[@]}"; do
   assert "no bare #FFF in $f"   "$(grep -c 'color: #FFF;' "$f" | tr -d ' ')" 0
   assert "no .35 icon in $f"    "$(grep -c 'color: rgba(var(--inkrgb, 20,19,14),.35)' "$f" | tr -d ' ')" 0
 done
+assert "runtime is vendored, not unpkg" \
+  "$(grep -c 'unpkg.com' support.js | tr -d ' ')" 0
+assert "vendored files present" \
+  "$(ls vendor/*.js 2>/dev/null | wc -l | tr -d ' ')" 3
 # owner-removed content must stay removed after a re-export
 assert "discipline section removed" \
   "$(grep -c 'data-disc' judged-sports-platform.html | tr -d ' ')" 0

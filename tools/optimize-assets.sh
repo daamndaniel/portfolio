@@ -25,16 +25,22 @@
 #   Panels (1000px) and the discipline stills (560px) are already at or below their
 #   2x target, so they are only re-encoded, never resized.
 #
-# WHY SOME FILES STAY PNG
-#   Three files genuinely USE their alpha channel — verified by decoding every
-#   pixel's alpha byte, not by trusting `sips -g hasAlpha`, which reports "yes" for
-#   a merely PRESENT channel and is true of all 27 PNGs here:
-#     sb-cover.png  828,677 non-opaque px
-#     sb-card.png   418,049 non-opaque px
-#     sb-mini.png    59,814 non-opaque px
-#   Flattening those onto a colour would break them, and it cannot be done safely
-#   anyway because the page has both a light and a dark theme behind them. They are
-#   resized only. The other 24 PNGs are fully opaque and become JPEG.
+# WHICH FILES STAY PNG — AND A MISTAKE THIS ENCODES
+#   A PNG keeps its format only if it has REAL transparency, decided by
+#   tools/png-min-alpha.py: minimum alpha below ALPHA_FLOOR (250) means keep.
+#
+#   Two wrong tests were tried first, and the second cost real bytes:
+#     `sips -g hasAlpha`   — useless. Reports "yes" for a merely PRESENT channel,
+#                            and said yes to all 27 PNGs, none of which needed it.
+#     counting non-opaque  — plausible but still wrong. It found 828,677 non-opaque
+#       pixels             pixels in sb-cover.png, so three files were left as PNG
+#                            and ~4.2MB was left behind. Every one of those pixels
+#                            had alpha 254: a 0.4% deviation, invisible, an export
+#                            artefact. Counting answers "how many differ", not "by
+#                            how much", and only the second question matters.
+#   Minimum alpha across every PNG here is 254, so in practice all 27 convert. The
+#   check stays in place so a genuinely transparent asset in a future export is
+#   protected automatically instead of relying on this comment.
 #
 # SAFETY
 #   Destructive to assets/, but the untouched originals live in the handoff at
@@ -56,7 +62,9 @@ command -v sips >/dev/null || { echo "FAIL: sips not found (macOS only)"; exit 1
 
 DRY=0; [ "${1:-}" = "--dry" ] && DRY=1
 QUALITY=88          # visually clean on UI screenshots; 82 showed ringing on text
-KEEP_PNG="sb-cover.png sb-card.png sb-mini.png"   # verified to use real alpha
+ALPHA_FLOOR=250     # min alpha below this = real transparency, keep PNG
+ALPHA_TOOL="tools/png-min-alpha.py"
+[ -f "$ALPHA_TOOL" ] || { echo "FAIL: $ALPHA_TOOL is missing"; exit 1; }
 
 target_width() {
   case "$1" in
@@ -82,7 +90,10 @@ for path in assets/*; do
   [ -n "$w" ] || { echo "  skip (unreadable): $f"; skipped=$((skipped+1)); continue; }
 
   keep=0
-  for k in $KEEP_PNG; do [ "$f" = "$k" ] && keep=1; done
+  if [ "${f##*.}" = "png" ]; then
+    a=$(python3 "$ALPHA_TOOL" "$path")
+    [ "$a" -lt "$ALPHA_FLOOR" ] && keep=1
+  fi
   ext="${f##*.}"
   to_jpeg=0
   [ "$ext" = "png" ] && [ "$keep" = "0" ] && to_jpeg=1
