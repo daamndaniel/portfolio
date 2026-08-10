@@ -77,10 +77,16 @@ toggle groups real ARIA state plus a cue that is not colour — they previously
 signalled selection by hue alone at 1.22:1 separation (SC 1.4.1).
 
 Passing already, recorded so nobody "fixes" them later: ink text 16.44:1, `rgba(ink,.66)`
-5.75:1 light / 7.63:1 dark, accent link 6.96:1, all `clamp()` font minimums ≥16px, nothing
-sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone.
+5.75:1 light / 7.63:1 dark, accent link 6.96:1, all `clamp()` font minimums ≥16px, and
+nothing sets `outline: none`.
 
-### Three traps, learned the hard way
+Spacing is ~92% on a 4pt grid and needs no work. An earlier note here claimed `56`/`60`px
+and `92`/`96`px were near-miss duplicates; they are not. `92px` is only ever a `margin-top`
+and `96px` only ever a `padding`, so they never do the same job, and `clamp(28px, 5vw, 56px)`
+vs `clamp(32px, 5vw, 60px)` differ at *both* ends — two deliberate steps in the ramp, not
+one value with a typo.
+
+### Four traps, learned the hard way
 
 1. **Selectors must be checked against the rendered DOM, not the source bytes.** The runtime
    re-serialises inline styles through the CSSOM, so `minmax(0,200px)` in the file becomes
@@ -92,6 +98,11 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
    template that is in the DOM at parse time, once in the tree `support.js` renders from it.
    Querying `document` finds the template copy, which is then serialised and re-created by
    React *without event listeners* — you get a control that renders and does nothing.
+4. **Judge PNG transparency by alpha VALUE, never by pixel count.** `sips -g hasAlpha`
+   reports "yes" for a merely present channel and said yes to all 27 PNGs here, none of
+   which needed it. Counting non-opaque pixels is also wrong: three files reported hundreds
+   of thousands, so they were kept as PNG and 4.2MB was wasted — every one of those pixels
+   had alpha 254, a 0.4% deviation. `tools/png-min-alpha.py` asks the right question.
 
 ## Constraints — don't "fix" these
 
@@ -110,25 +121,24 @@ sets `outline: none`, and spacing is ~92% on a 4pt grid — coherent, left alone
   `1fr 1fr` grids in the site are those toggles, so never write a blanket "collapse all
   two-column grids" rule — it breaks every one of them.
 
-## Known gaps
+## Open items
 
-- **Nothing outstanding on assets or the runtime.** Both former gaps are closed: the
-  runtime is vendored in `vendor/` (no third-party origin), and `assets/` is 4.7MB, down
-  from 22MB.
-- **The XGrab discipline cards are deliberately removed.** The Moguls / Aerials /
-  Water-ramps section was cut at the owner's request; its three stills are deleted too.
-  `tools/drop-sections.py` re-applies the removal after a re-export, since the design
-  tool will regenerate the page complete with it. Three now-orphaned entries remain in
-  that page's translation dictionary ("Moguls", "Aerials", "Water ramps") — inert, since
-  they can no longer match any text node, and left alone rather than risk a syntax error
-  editing the JS object literal.
-- **`assets/` no longer contains any PNG.** All 25 files are JPEG. Three were previously
-  held back as PNG on the belief they used transparency — they did not: their minimum
-  alpha was 254, a 0.4% deviation invisible to the eye and an artefact of the export.
-  Converting them saved a further 4.2MB. `tools/png-min-alpha.py` now performs that check
-  by alpha VALUE, so a genuinely transparent asset in a future export is still protected.
-- **The old capitalised `/Portfolio/` URL is permanently dead.** GitHub creates no Pages
-  redirect for a renamed repo, and Pages has no rewrite config. Only a custom domain would
-  let you reclaim it.
-- **Spacing has a few near-miss pairs** (`56`/`60`px, `92`/`96`px) doing the same job.
-  Cosmetic; consolidating them risks more than it fixes.
+Nothing is tracked in this file. Anything still outstanding lives in
+[Issues](https://github.com/daamndaniel/portfolio/issues) so it can be closed properly:
+
+- [#1](https://github.com/daamndaniel/portfolio/issues/1) — the old capitalised
+  `/Portfolio/` URL is dead and only a custom domain can reclaim it.
+- [#2](https://github.com/daamndaniel/portfolio/issues/2) — three orphaned translation
+  keys left over from the removed discipline section. Inert; cosmetic.
+
+### Decisions worth knowing
+
+- **The XGrab discipline card section is deliberately removed.** Cut at the owner's
+  request, its three stills deleted with it. `tools/drop-sections.py` re-applies the
+  removal after a re-export, because the design tool regenerates the page complete
+  with it.
+- **`assets/` contains no PNG.** All 25 files are JPEG, 4.7MB total, down from 22MB —
+  and every conversion was checked by pixel-diffing against the original rather than
+  by eye. See trap #4 for why three of them nearly got left behind.
+- **The runtime is vendored, not fetched from a CDN.** See the constraint above before
+  changing it.
