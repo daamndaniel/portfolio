@@ -36,12 +36,13 @@ a handful of accessibility gaps. All of that is fixed by hand, and all of it liv
 |---|---|
 | `tools/responsive-fixes.css` | Responsive **and** accessibility CSS. **Single source of truth.** |
 | `tools/mobile-menu.js` | Sticky header + hamburger nav (mobile only). |
-| `tools/i18n-title.js` | Keeps `<title>` and `<html lang>` in step with the language toggle. |
+| `tools/i18n-title.js` | Keeps `<title>`, `<html lang>` and image `alt` text in step with the language toggle. |
 | `tools/a11y-controls.js` | Keyboard support + ARIA state for the slider and the four toggles. |
+| `tools/seo-tags.py` | Per-page `<head>` metadata, plus `sitemap.xml` and `robots.txt`. |
 | `tools/drop-sections.py` | Re-applies owner-removed sections. Called by the script below. |
 | `tools/png-min-alpha.py` | Reports a PNG's minimum alpha, so real transparency is preserved. |
 | `tools/optimize-assets.sh` | Right-sizes and re-encodes `assets/`. Run BEFORE the next one. |
-| `tools/apply-responsive-fixes.sh` | Injects all four, plus byte-level contrast and asset-path fixes. |
+| `tools/apply-responsive-fixes.sh` | Injects all of the above, plus byte-level contrast and asset-path fixes. |
 
 **Re-exporting from the design tool regenerates the five HTML files and deletes every one
 of these changes.** Put them back with:
@@ -58,9 +59,18 @@ The apply script also carries two **content** edits, because a re-export regener
 pages without them: the XGrab discipline section stays removed, and "Claude" stays in the
 About page's tool chips. Both are idempotent.
 
-It is idempotent, asserts 52 invariants about its own result, and takes `--check` to verify
+It is idempotent, asserts 98 invariants about its own result, and takes `--check` to verify
 without writing. Nothing runs at deploy time — it is a one-shot script you run by hand, so
 it does not make this a build pipeline.
+
+**It re-injects on every run rather than skipping pages it has already patched.** That
+matters: it used to `continue` as soon as it found its own marker, so editing
+`tools/responsive-fixes.css` or any `tools/*.js` had no effect on a page patched earlier —
+the "single source of truth" above was only true of a freshly exported file. The bug
+surfaced when an alt-text translation was added, the script reported success, and the
+browser went on serving the previous copy of the script from inside the HTML. Each payload
+is delimited (the CSS by its banner through the following `</style>`, each script by its
+`data-*` attribute), so the script now strips its own prior output before writing.
 
 ### What the accessibility work covers
 
@@ -85,6 +95,59 @@ and `92`/`96`px were near-miss duplicates; they are not. `92px` is only ever a `
 and `96px` only ever a `padding`, so they never do the same job, and `clamp(28px, 5vw, 56px)`
 vs `clamp(32px, 5vw, 60px)` differ at *both* ends — two deliberate steps in the ramp, not
 one value with a typo.
+
+### What the SEO work covers
+
+The export shipped no metadata at all: no `<meta name="description">`, no Open Graph, no
+Twitter card, no structured data, no sitemap, on any of the five pages. Pasted into
+LinkedIn or Slack the site unfurled as a bare URL. `tools/seo-tags.py` now emits, per page,
+a description written from that page's own copy, Open Graph and Twitter tags, and
+schema.org JSON-LD (`Person` + `WebSite`/`ProfilePage` on the two profile pages,
+`CreativeWork` on the three case studies), plus a site-level `sitemap.xml`.
+
+It also owns `<title>` and `rel="canonical"`. Those already existed, but only because an
+earlier one-off migration added them by hand — nothing re-applied them, so the next
+re-export would have silently dropped both.
+
+Two things worth knowing:
+
+- **Crawlability was never the problem, and that was measured rather than assumed.** The raw
+  HTML ahead of the `text/x-dc` template already carries the `<h1>` and ~25k characters of
+  prose, so search engines index real content without executing any JavaScript. Only the
+  metadata was missing. Link unfurlers, by contrast, run no JavaScript whatsoever — which is
+  why these tags go in the real `<head>` on disk and not in the in-body `<helmet>`.
+- **`robots.txt` is shipped but inert here.** Crawlers fetch robots.txt only from the origin
+  root, `daamndaniel.github.io/robots.txt`. This is a project site under `/portfolio/`, so
+  the file lands at a path nothing will read, and the origin root belongs to a different
+  repo. It costs nothing, states intent, and starts working the moment a custom domain is
+  attached — but until then the sitemap has to be submitted to Search Console by hand
+  ([#3](https://github.com/daamndaniel/portfolio/issues/3)).
+
+No `hreflang`: the toggle swaps copy in place, so English and Spanish share one URL and an
+`hreflang` annotation — which describes alternate *URLs* — would be a lie. The pages declare
+`og:locale` with `og:locale:alternate` instead.
+
+`assets/og-share.jpg` is the 1200×630 share card. It could not be derived from
+`assets/daniel-portrait.jpg`, which is 600×900 — under the 1200px minimum for a large card
+and the wrong shape — so it is cut from the 2688×4033 original in the handoff. The crop
+offset is written down in `tools/optimize-assets.sh` because it was read off the image, not
+calculated: the first attempt sliced his chin off.
+
+### What the alt-text work covers
+
+**The export's alt text was already good** — all 28 images carried specific, useful
+descriptions ("Redesigned sales form grouped into three short steps"), none were empty or
+missing, and all 57 decorative SVGs already had `aria-hidden`. No English wording was
+changed.
+
+The one real gap was bilingual. The page's own `applyLang()` translates by walking **text
+nodes**, and `alt` is an attribute — so it was as unreachable to that walker as `<title>`
+had been, and all 28 images kept English alt text under `<html lang="es">`. Invisible to a
+sighted visitor; for a screen reader it means English strings read with Spanish
+pronunciation rules, the same SC 3.1.1 problem the `lang` fix addressed, in the one place
+that fix could not reach. `tools/i18n-title.js` now carries 21 translations and swaps them
+with the toggle, stashing each English original in `data-alt-en` so switching back is a
+lookup rather than a reverse-translation.
 
 ### Four traps, learned the hard way
 
@@ -130,6 +193,9 @@ Nothing is tracked in this file. Anything still outstanding lives in
   `/Portfolio/` URL is dead and only a custom domain can reclaim it.
 - [#2](https://github.com/daamndaniel/portfolio/issues/2) — three orphaned translation
   keys left over from the removed discipline section. Inert; cosmetic.
+- [#3](https://github.com/daamndaniel/portfolio/issues/3) — submit `sitemap.xml` to Google
+  Search Console. Needs the owner's Google account, and `robots.txt` cannot do it from a
+  project-site path.
 
 ### Decisions worth knowing
 
@@ -137,6 +203,9 @@ Nothing is tracked in this file. Anything still outstanding lives in
   request, its three stills deleted with it. `tools/drop-sections.py` re-applies the
   removal after a re-export, because the design tool regenerates the page complete
   with it.
+- **`assets/og-share.jpg` is not resized by `optimize-assets.sh`.** It is already at its
+  exact required 1200×630, and resampling it would defeat the point. Anything named `og-*`
+  is skipped explicitly rather than relying on it matching no width rule.
 - **`assets/` contains no PNG.** All 25 files are JPEG, 4.7MB total, down from 22MB —
   and every conversion was checked by pixel-diffing against the original rather than
   by eye. See trap #4 for why three of them nearly got left behind.

@@ -77,6 +77,40 @@ target_width() {
   esac
 }
 
+# ---------------------------------------------------------------------------
+# OPEN GRAPH SHARE CARD
+#   assets/og-share.jpg is the 1200x630 image LinkedIn, Slack and iMessage show
+#   when the site is pasted as a link. It is committed to the repo, so this only
+#   rebuilds it if it has gone missing.
+#
+#   It cannot be derived from assets/daniel-portrait.jpg: that file is 600x900,
+#   below the 1200px minimum for a large card AND the wrong shape (0.67:1 against
+#   the 1.91:1 unfurlers crop to). Left alone, LinkedIn would centre-crop a
+#   low-resolution portrait — which lands on the chest, not the face. So the card
+#   is cut from the 2688x4033 ORIGINAL in the handoff instead.
+#
+#   The crop: a 1.91:1 band is 1411px tall at the original's full 2688px width,
+#   and the head occupies y=747..1730, so the band has to start at 620 to hold the
+#   whole face with headroom above and the sweater below. Offset 300 was tried
+#   first and sliced the chin off. Nothing about this is derivable — it was read
+#   off the image — hence the numbers being written down here.
+# ---------------------------------------------------------------------------
+OG_SHARE="assets/og-share.jpg"
+OG_SRC="$HOME/Downloads/design_handoff_portfolio_site/site/assets/daniel-portrait.jpg"
+if [ ! -f "$OG_SHARE" ]; then
+  if [ -f "$OG_SRC" ] && [ "$DRY" = "0" ]; then
+    tmp=$(mktemp -t ogshare).jpg
+    sips -c 1411 2688 --cropOffset 620 0 "$OG_SRC" --out "$tmp" >/dev/null
+    sips -z 630 1200 -s format jpeg -s formatOptions "$QUALITY" "$tmp" --out "$OG_SHARE" >/dev/null
+    rm -f "$tmp"
+    echo "  built $OG_SHARE (1200x630 from the 2688x4033 original)"
+  else
+    echo "  WARN $OG_SHARE missing and the handoff original is not at:"
+    echo "       $OG_SRC"
+    echo "       Restore the file from git rather than regenerating it from assets/."
+  fi
+fi
+
 before=$(du -sk assets | cut -f1)
 changed=0; skipped=0
 
@@ -84,6 +118,10 @@ for path in assets/*; do
   f=$(basename "$path")
   [ -f "$path" ] || continue
   case "$f" in *.png|*.jpg|*.jpeg) ;; *) continue ;; esac
+  # og-share.jpg is already at its exact required size; target_width() would match
+  # it on no rule and skip it anyway, but say so explicitly so a future pattern
+  # (e.g. one matching *-share.jpg) cannot start resampling the share card.
+  case "$f" in og-*) skipped=$((skipped+1)); continue ;; esac
 
   t=$(target_width "$f")
   w=$(sips -g pixelWidth "$path" 2>/dev/null | awk '/pixelWidth/{print $2}')

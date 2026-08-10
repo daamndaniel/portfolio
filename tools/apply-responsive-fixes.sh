@@ -23,6 +23,7 @@ JS="tools/mobile-menu.js"
 JS2="tools/i18n-title.js"
 JS3="tools/a11y-controls.js"
 DROP="tools/drop-sections.py"
+SEO="tools/seo-tags.py"
 PAGES=(index.html about.html sales-landing-cro.html stack-builders-website.html judged-sports-platform.html)
 MARKER="RESPONSIVE FIXES"
 JS_MARKER="data-mobile-menu"
@@ -36,6 +37,7 @@ CHECK_ONLY=0
 [ -f "$JS2" ] || { echo "FAIL: $JS2 is missing"; exit 1; }
 [ -f "$JS3" ] || { echo "FAIL: $JS3 is missing"; exit 1; }
 [ -f "$DROP" ] || { echo "FAIL: $DROP is missing"; exit 1; }
+[ -f "$SEO" ] || { echo "FAIL: $SEO is missing"; exit 1; }
 
 # ---------------------------------------------------------------------------
 # TOKEN FIXES — contrast failures that cannot be fixed from the stylesheet.
@@ -163,14 +165,40 @@ PYV
 
 vendor_runtime
 
-applied=0; already=0; missing=0
+# SEO metadata, sitemap and robots. Outside the loop below because it patches
+# <head>, which has nothing to do with the helmet/body payloads that loop injects,
+# and because sitemap.xml and robots.txt are per-site rather than per-page.
+# seo-tags.py is idempotent, so running it unconditionally is correct and cheap.
+echo
+echo "SEO METADATA"
+if [ $CHECK_ONLY -eq 1 ]; then python3 "$SEO" --check; else python3 "$SEO"; fi
+echo
+
+# Pages are RE-patched, not skipped when already patched.
+#
+# This used to `continue` on finding $MARKER, which quietly broke the promise the
+# README makes: editing tools/responsive-fixes.css or tools/*.js had no effect on
+# any page that had been patched before, so the "single source of truth" was only
+# the truth for a freshly exported file. It was found the honest way — an alt-text
+# translation was added, the script reported success, and the browser kept serving
+# the previous copy of the script from inside the HTML.
+#
+# So the injection below now strips its own prior output first. That is safe
+# because every payload is delimited (the CSS by its RESPONSIVE FIXES banner
+# through the following </style>, each script by its data-* attribute) and none of
+# them contains a literal </style> or </script> that could end the match early.
+applied=0; refreshed=0; missing=0
 for f in "${PAGES[@]}"; do
   if [ ! -f "$f" ]; then echo "  MISSING  $f"; missing=$((missing+1)); continue; fi
-  if grep -q "$MARKER" "$f"; then echo "  ok       $f (already patched)"; already=$((already+1)); continue; fi
-  if [ $CHECK_ONLY -eq 1 ]; then echo "  NEEDS    $f"; continue; fi
+  if [ $CHECK_ONLY -eq 1 ]; then
+    if grep -q "$MARKER" "$f"; then echo "  ok       $f (patched)"; else echo "  NEEDS    $f"; fi
+    continue
+  fi
+  had=0; grep -q "$MARKER" "$f" && had=1
   python3 "$DROP" "$f"
   token_fixes "$f"
   python3 - "$f" "$CSS" "$JS" "$JS2" "$JS3" <<'PY'
+import re
 import sys
 page, cssfile, jsfile, js2file, js3file = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 html = open(page, encoding='utf-8').read()
@@ -178,6 +206,20 @@ css  = open(cssfile, encoding='utf-8').read()
 js   = open(jsfile,  encoding='utf-8').read()
 js2  = open(js2file, encoding='utf-8').read()
 js3  = open(js3file, encoding='utf-8').read()
+
+# 0. Remove any previous injection, so what lands below is exactly what is in
+#    tools/ right now. The CSS banner is unique per page (an assertion pins it at
+#    one), and it is always injected directly ahead of the </style> that closes
+#    the helmet's first <style> — so banner..</style> is precisely the old block.
+m = html.find('RESPONSIVE FIXES')
+if m >= 0:
+    cstart = html.rfind('/*', 0, m)
+    cend = html.find('</style>', m)
+    if cstart < 0 or cend < 0:
+        sys.exit(f'FAIL: {page} has the CSS banner but not its bounds — inspect by hand')
+    html = html[:cstart].rstrip('\n\t ') + html[cend:]
+for attr in ('data-mobile-menu', 'data-i18n-title', 'data-a11y-controls'):
+    html = re.sub(r'[ \t]*<script %s>.*?</script>\n?' % attr, '', html, flags=re.S)
 
 # 1. CSS -> immediately before the closing </style> of the FIRST <style> block
 #    inside <helmet>. support.js preserves <style> there and hoists it to <head>.
@@ -200,8 +242,13 @@ html = html[:b] + '<script data-mobile-menu>\n' + js + '</script>\n' \
 
 open(page, 'w', encoding='utf-8').write(html)
 PY
-  echo "  patched  $f (css + js)"
-  applied=$((applied+1))
+  if [ $had -eq 1 ]; then
+    echo "  refreshed $f (css + js re-injected from tools/)"
+    refreshed=$((refreshed+1))
+  else
+    echo "  patched  $f (css + js)"
+    applied=$((applied+1))
+  fi
 done
 
 echo
@@ -258,7 +305,35 @@ assert "collapse rule targets gap:1px only" \
 assert "no transform/opacity !important" \
   "$(grep -E '!important' "$CSS" | grep -cE '\b(transform|opacity)\s*:' | tr -d ' ')" 0
 
+# SEO: link unfurlers do not run JavaScript, so every one of these must be in the
+# served bytes. Exactly one block per page — a second <title> is a real hazard here
+# because the strip-then-insert in seo-tags.py is what keeps it at one.
+for f in "${PAGES[@]}"; do
+  [ -f "$f" ] || continue
+  assert "seo block in $f"   "$(grep -c '<!-- seo:start -->' "$f" | tr -d ' ')" 1
+  assert "one <title> in $f" "$(grep -oE '<title>[^<]*</title>' "$f" | wc -l | tr -d ' ')" 1
+  assert "one canonical in $f" "$(grep -c 'rel="canonical"' "$f" | tr -d ' ')" 1
+  assert "description in $f" "$(grep -c '<meta name="description"' "$f" | tr -d ' ')" 1
+  assert "og:image in $f"    "$(grep -c '<meta property="og:image" content="http' "$f" | tr -d ' ')" 1
+  assert "twitter card in $f" "$(grep -c 'name="twitter:card"' "$f" | tr -d ' ')" 1
+  assert "json-ld in $f"     "$(grep -c 'application/ld+json' "$f" | tr -d ' ')" 1
+done
+assert "sitemap lists 5 urls" "$(grep -c '<loc>' sitemap.xml | tr -d ' ')" 5
+assert "robots points at sitemap" "$(grep -c '^Sitemap: https://' robots.txt | tr -d ' ')" 1
+# og:image must resolve — a 404 unfurls as a blank card and nobody notices for months
+for img in $(grep -hoE 'og:image" content="[^"]+' "${PAGES[@]}" | sed 's|.*/portfolio/||' | sort -u); do
+  assert "og image exists: $img" "$([ -f "$img" ] && echo 1 || echo 0)" 1
+done
+# alt text: every image must keep a non-empty alt, and the ES map must stay wired up
+assert "no empty/missing alt" \
+  "$(grep -ohE '<img[^>]*>' "${PAGES[@]}" | grep -cvE 'alt="[^"]+"' | tr -d ' ')" 0
+# 21 unique English alt strings across the five pages; if an export adds imagery,
+# this fails and the new string has to be translated rather than silently shipped
+# as English under <html lang="es">.
+assert "es alt map covers 21 strings" "$(grep -cE "^    '.*':$" "$JS2" | tr -d ' ')" 21
+assert "syncAlt wired into sync"      "$(grep -c 'syncAlt(' "$JS2" | tr -d ' ')" 3
+
 [ $fail -eq 0 ] && echo "ALL ASSERTIONS PASSED" || { echo "FAILED — inspect before committing"; exit 1; }
 echo
-echo "applied=$applied already=$already missing=$missing"
+echo "patched=$applied refreshed=$refreshed missing=$missing"
 echo "Now verify in a browser at 375px and 1425px — see the checklist in $CSS."

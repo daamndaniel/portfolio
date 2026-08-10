@@ -1,0 +1,8 @@
+# Served at /portfolio/robots.txt, which crawlers do NOT read — they only
+# fetch robots.txt from the origin root. Kept so intent is explicit and so
+# it starts working the moment a custom domain is attached. Until then the
+# sitemap must be submitted to Google Search Console by hand.
+User-agent: *
+Allow: /
+
+Sitemap: https://daamndaniel.github.io/portfolio/sitemap.xml
