@@ -53,7 +53,7 @@ CHECK_ONLY=0
 token_fixes() {
   local f="$1"
   python3 - "$f" <<'PY'
-import sys
+import sys, re as _re
 p=sys.argv[1]; s=open(p,encoding='utf-8').read(); n=0
 
 # 1. Eyebrow/index labels inside inverted panels. Both the panel background and
@@ -94,12 +94,24 @@ n+=s.count(a); s=s.replace(a,b)
 #    JPEG (the 3 that use real alpha stay PNG). Making the rewrite conditional means
 #    a fresh export whose assets are still PNG keeps working — heavy, but never
 #    broken — instead of pointing at files nobody generated yet.
-import os, re as _re
+import os
 for stem in sorted(set(_re.findall(r'assets/([A-Za-z0-9._-]+)\.png', s))):
     if os.path.exists(os.path.join('assets', stem + '.jpg')):
         old_ref = 'assets/' + stem + '.png'
         n += s.count(old_ref)
         s = s.replace(old_ref, 'assets/' + stem + '.jpg')
+
+# 5. Add "Claude" to the About page's tool chips. An owner content edit, kept here
+#    for the same reason as the dropped section: a re-export regenerates the page
+#    without it. The new chip CLONES the Jira chip's attributes byte-for-byte and
+#    only changes the label, so it inherits the identical styling and the data-chip
+#    hover binding rather than approximating them. Idempotent — skipped if present.
+if p.endswith('about.html') and '>Claude</span>' not in s:
+    _m = _re.search(r'<span[^>]*>Jira</span>', s)
+    if _m:
+        _jira = _m.group(0)
+        s = s.replace(_jira, _jira + '\n              ' + _jira.replace('>Jira<', '>Claude<'), 1)
+        n += 1
 
 open(p,'w',encoding='utf-8').write(s)
 print(f'    token fixes applied: {n}')

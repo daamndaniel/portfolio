@@ -53,6 +53,10 @@ bash tools/apply-responsive-fixes.sh   # CSS/JS + point the HTML at the .jpg fil
 The asset-path rewrite is conditional on the `.jpg` existing, so running only the
 second script after a re-export leaves references on `.png` — heavy, but not broken.
 
+The apply script also carries two **content** edits, because a re-export regenerates the
+pages without them: the XGrab discipline section stays removed, and "Claude" stays in the
+About page's tool chips. Both are idempotent.
+
 It is idempotent, asserts 50 invariants about its own result, and takes `--check` to verify
 without writing. Nothing runs at deploy time — it is a one-shot script you run by hand, so
 it does not make this a build pipeline.
